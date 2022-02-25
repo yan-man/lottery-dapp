@@ -17,14 +17,14 @@ contract Lottery is Ownable {
     uint256 dateEnd;
     bool isActive;
   }
-  uint256 prizeAmount;
-  uint256 lotteryId = 0;
+  uint256 public prizeAmount;
+  uint256 public currentLotteryId = 0;
   address[] public participants;
   mapping(uint256 => address[]) public historicalParticipants;
   mapping(uint256 => LotteryStruct) public lotteries;
 
   // Events
-  event NewLottery(address creator);
+  event NewLottery(address creator, uint256 start, uint256 end);
 
   /**
    * Contract initialization.
@@ -38,15 +38,37 @@ contract Lottery is Ownable {
    */
   function initLottery() external {
     console.log("initLottery");
-    uint256 start = block.timestamp;
-    LotteryStruct memory lottery = LotteryStruct({
-      dateStart: start,
-      dateEnd: start.add(1 weeks),
+    uint256 dateStart = block.timestamp;
+    uint256 dateEnd = dateStart.add(1 weeks);
+
+    currentLotteryId = currentLotteryId.add(1);
+    lotteries[currentLotteryId] = LotteryStruct({
+      dateStart: dateStart,
+      dateEnd: dateEnd,
       isActive: true
     });
-    lotteries[lotteryId] = lottery;
-    emit NewLottery(msg.sender);
-  }a
+
+    emit NewLottery(msg.sender, dateStart, dateEnd);
+  }
+
+  /**
+   * A function to transfer tokens.
+   *
+   *
+   */
+  function getLottery(uint256 lotteryId)
+    public
+    view
+    returns (
+      uint256 dateStart,
+      uint256 dateEnd,
+      bool isActive
+    )
+  {
+    console.log("getLottery");
+    LotteryStruct memory lottery = lotteries[lotteryId];
+    return (lottery.dateStart, lottery.dateEnd, lottery.isActive);
+  }
 
   /**
    * A function to transfer tokens.
