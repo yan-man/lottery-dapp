@@ -198,8 +198,8 @@ contract Lottery is Ownable {
     designateWinner();
     depositPrize(winningAddress);
     resetLottery();
-    
-    triggerLottery(uint256 currentLotteryId, uint256 winningIndex);
+
+    emit triggerLottery(currentLotteryId, winningIndex);
     currentLotteryId = currentLotteryId.add(1);
   }
 
