@@ -24,25 +24,26 @@ describe("Lottery contract", function () {
       expect(await LotteryContract.owner()).to.equal(owner.address);
     });
 
-    it("Should initialize a new lottery", async function () {
-      const tx = await LotteryContract.initLottery();
-      const receipt = await tx.wait();
+    // it("Should initialize a new lottery", async function () {
+    //   const tx = await LotteryContract.initLottery();
+    //   const receipt = await tx.wait();
 
-      for (const event of receipt.events) {
-        console.log(`Event ${event.event} with args ${event.args}`);
-      }
+    //   for (const event of receipt.events) {
+    //     console.log(`Event ${event.event} with args ${event.args}`);
+    //   }
 
-      const lotteryId = await LotteryContract.currentLotteryId();
-      expect(lotteryId).to.equal(1);
+    //   const lotteryId = await LotteryContract.currentLotteryId();
+    //   expect(lotteryId).to.equal(1);
 
-      const lottery = {
-        ...(await LotteryContract.getLottery(lotteryId.toNumber())),
-      };
+    //   const lottery = {
+    //     ...(await LotteryContract.getLottery(lotteryId.toNumber())),
+    //   };
 
-      expect(lottery.dateEnd.sub(lottery.dateStart).toNumber()).to.equal(
-        3600 * 24 * 7
-      );
-    });
+    //   expect(lottery.dateEnd.sub(lottery.dateStart).toNumber()).to.equal(
+    //     3600 * 24 * 7
+    //   );
+    //   console.log(Math.floor(Date.now() / 1000));
+    // });
 
     // it("Should assign the total supply of tokens to the owner", async function () {
     //   const ownerBalance = await hardhatToken.balanceOf(owner.address);
@@ -50,16 +51,16 @@ describe("Lottery contract", function () {
     // });
   });
 
-  describe("After lottery initialized", function () {
-    beforeEach(async function () {
-      await LotteryContract.initLottery();
-      // console.log(await LotteryContract.initLottery());
-    });
-    it("Should initialize a new lottery", async function () {
-      console.log(await LotteryContract.currentLotteryId());
-    });
-    it("Should initialize a new lottery", async function () {
-      console.log(await LotteryContract.currentLotteryId());
-    });
-  });
+  // describe("After first already lottery initialized", function () {
+  //   beforeEach(async function () {
+  //     await LotteryContract.initLottery();
+  //     // console.log(await LotteryContract.initLottery());
+  //   });
+  //   it("Should initialize a new lottery", async function () {
+  //     console.log(await LotteryContract.currentLotteryId());
+  //   });
+  //   it("Should initialize a new lottery", async function () {
+  //     console.log(await LotteryContract.currentLotteryId());
+  //   });
+  // });
 });
