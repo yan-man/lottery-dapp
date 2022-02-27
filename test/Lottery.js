@@ -138,25 +138,26 @@ describe("Lottery contract", function () {
       );
     });
 
-    describe("After player1 mints tickets", function () {
-      let expectedTotalNumTicketsMinted;
+    describe("...After player1 mints tickets", function () {
+      let expectedTotalNumTicketsMinted, numTicketsPlayer1;
       beforeEach(async function () {
         const value = ethers.utils.parseEther("1.0");
         const tx = await LotteryContract.mintLotteryTickets({
           value: value, // Sends exactly 1.0 ether
         });
         expectedTotalNumTicketsMinted = value.div(expectedMinAmountInWei);
+        numTicketsPlayer1 = expectedTotalNumTicketsMinted;
       });
       it("Should mint lottery tickets for new player2", async function () {
-        const value2 = ethers.utils.parseEther("0.5");
-        const tx2 = await LotteryContract.connect(addr1).mintLotteryTickets({
-          value: value2, // Sends exactly 1.0 ether
+        const value = ethers.utils.parseEther("0.5");
+        const tx = await LotteryContract.connect(addr1).mintLotteryTickets({
+          value: value, // Sends exactly 1.0 ether
         });
-        const receipt = await tx2.wait();
+        const receipt = await tx.wait();
 
         player2 = addr1.address;
 
-        const expectedNumTicketsMinted = value2.div(expectedMinAmountInWei);
+        const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
         expectedTotalNumTicketsMinted = expectedTotalNumTicketsMinted.add(
           expectedNumTicketsMinted
         );
@@ -175,7 +176,49 @@ describe("Lottery contract", function () {
           expectedNumTicketsMinted
         );
       });
-      it("Should mint lottery tickets for player1 again", async function () {});
+      describe("...After player2 mints tickets", function () {
+        beforeEach(async function () {
+          const value = ethers.utils.parseEther("0.5");
+          await LotteryContract.connect(addr1).mintLotteryTickets({
+            value: value,
+          });
+          expectedTotalNumTicketsMinted = expectedTotalNumTicketsMinted.add(
+            value.div(expectedMinAmountInWei)
+          );
+        });
+        it("Should mint more lottery tickets for player1", async function () {
+          const value = ethers.utils.parseEther("0.1");
+          const tx = await LotteryContract.mintLotteryTickets({
+            value: value,
+          });
+          const receipt = await tx.wait();
+
+          const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
+          numTicketsPlayer1 = numTicketsPlayer1.add(expectedNumTicketsMinted);
+          expectedTotalNumTicketsMinted = expectedTotalNumTicketsMinted.add(
+            expectedNumTicketsMinted
+          );
+
+          // check emitted event details
+          const { player, numTicketsMinted } = { ...receipt.events[0].args };
+          expect(player).to.be.equal(owner.address);
+          expect(numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
+
+          expect(await LotteryContract.listOfPlayers(0)).to.be.equal(
+            owner.address
+          );
+          expect(await LotteryContract.numActivePlayers()).to.be.equal(2);
+          expect(await LotteryContract.totalNumTickets()).to.be.equal(
+            expectedTotalNumTicketsMinted
+          );
+          expect(await LotteryContract.players(owner.address)).to.be.equal(
+            true
+          );
+          expect(await LotteryContract.tickets(owner.address)).to.be.equal(
+            numTicketsPlayer1
+          );
+        });
+      });
     });
   });
 
