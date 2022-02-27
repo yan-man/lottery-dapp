@@ -218,20 +218,28 @@ describe("Lottery contract", function () {
             numTicketsPlayer1
           );
         });
+        describe("...After more lottery tickets for player1 are minted", function () {
+          beforeEach(async function () {
+            const value = ethers.utils.parseEther("0.1");
+            const tx = await LotteryContract.mintLotteryTickets({
+              value: value,
+            });
+          });
+          it("Should trigger lottery drawing", async function () {
+            // check ticket distribution, perform randomized drawing, designated winner, deposited prize, reset
+            // emit event
+            console.log(await LotteryContract.triggerLotteryDrawing());
+          });
+          describe("...After lottery triggered", function () {
+            beforeEach(async function () {
+              // trigger lottery
+            });
+          });
+          it("Should not trigger lottery drawing if not owner", async function () {});
+        });
       });
     });
   });
 
-  // describe("After first already lottery initialized", function () {
-  //   beforeEach(async function () {
-  //     await LotteryContract.initLottery();
-  //     // console.log(await LotteryContract.initLottery());
-  //   });
-  //   it("Should initialize a new lottery", async function () {
-  //     console.log(await LotteryContract.currentLotteryId());
-  //   });
-  //   it("Should initialize a new lottery", async function () {
-  //     console.log(await LotteryContract.currentLotteryId());
-  //   });
-  // });
+  // need to test after first lottery triggered and data is overwritten on 2nd one
 });

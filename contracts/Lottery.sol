@@ -18,7 +18,7 @@ contract Lottery is Ownable {
     uint256 endTime;
     bool isActive;
   }
-  struct TicketStruct {
+  struct TicketDistributionStruct {
     address playerAddress;
     uint256 startIndex; // inclusive
     uint256 endIndex; // inclusive
@@ -34,7 +34,7 @@ contract Lottery is Ownable {
   uint256 public numLotteries = 0;
   uint256 public prizeAmount; // key is lotteryId
 
-  TicketStruct[] public ticketDistribution;
+  TicketDistributionStruct[] public ticketDistribution;
   address[] public listOfPlayers;
 
   uint256 public numActivePlayers;
@@ -188,7 +188,7 @@ contract Lottery is Ownable {
    *  - modifier - check that lottery end date reached
    */
   function triggerLotteryDrawing() public {
-    console.log("getLottery");
+    console.log("triggerLotteryDrawing");
     /*
     - calculate each player's odds
     - trigger lottery drawing with random numbers
@@ -234,14 +234,20 @@ contract Lottery is Ownable {
       // ie need an array of length numTickets instead of just length numPlayers
       address playerAddress = listOfPlayers[i];
       uint256 numTickets = tickets[playerAddress];
-      ticketDistribution[i] = TicketStruct({
+
+      TicketDistributionStruct memory newDistribution = TicketDistributionStruct({
         playerAddress: playerAddress,
         startIndex: ticketIndex,
         endIndex: ticketIndex.add(numTickets).sub(1) // sub 1 to account for array indices starting from 0
       });
+      if (ticketDistribution.length > i) {
+        ticketDistribution[i] = newDistribution;
+      } else {
+        ticketDistribution.push(newDistribution);
+      }
+
       tickets[playerAddress] = 0; // reset player's tickets to 0 after they've been counted
       ticketIndex = ticketIndex.add(numTickets);
-      totalNumTickets = totalNumTickets.add(numTickets);
     }
   }
 
@@ -285,7 +291,20 @@ contract Lottery is Ownable {
     winningAddress = address(0);
     // do binary search on ticketDistribution array to find winner
     bool isWinnerFound = false;
-    uint256 searchIndex = totalNumTickets.div(2);
+    // console.log(numActivePlayers);
+    uint256 searchIndex = numActivePlayers.div(2);
+    // console.log(totalNumTickets);
+    // console.log(searchIndex);
+    // console.log(winningTicketIndex);
+    // console.log(ticketDistribution[searchIndex].startIndex);
+    // console.log(ticketDistribution[searchIndex].endIndex);
+    // console.log(ticketDistribution[searchIndex].playerAddress);
+    // console.log(ticketDistribution[1].startIndex);
+    // console.log(ticketDistribution[1].endIndex);
+    // console.log(ticketDistribution[1].playerAddress);
+
+    uint256 maxLoops = 10;
+    uint256 loopCount = 0;
     while (!isWinnerFound) {
       if (
         ticketDistribution[searchIndex].startIndex <= winningTicketIndex &&
@@ -303,7 +322,12 @@ contract Lottery is Ownable {
       ) {
         searchIndex = searchIndex.mul(2);
       }
+      loopCount = loopCount.add(1);
+      if (loopCount > loopCount) {
+        isWinnerFound = true;
+      }
     }
+    console.log(winningAddress);
     return winningAddress;
   }
 
