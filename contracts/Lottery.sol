@@ -30,11 +30,15 @@ contract Lottery is Ownable {
   uint256 public maxPlayersAllowed = 1000;
   uint256 public currentLotteryId = 0;
   uint256 public prizeAmount; // key is lotteryId
-  uint256 numActivePlayers;
-  address[] public players;
+
   TicketStruct[] public ticketDistribution;
+  address[] public listOfPlayers;
+
+  uint256 numActivePlayers;
   uint256 totalNumTickets;
   uint256 winningTicketIndex;
+
+  mapping(address => bool) public players;
   mapping(address => uint256) tickets;
   mapping(uint256 => LotteryStruct) public lotteries; // key is lotteryId
   mapping(uint256 => mapping(address => uint256)) public pendingWithdrawals; // pending withdrawals for each winner, key is lotteryId
@@ -61,7 +65,7 @@ contract Lottery is Ownable {
     LotteryStruct memory lottery = lotteries[currentLotteryId];
     require(
       lottery.isActive == true &&
-        lottery.endTime >= block.timestamp &&
+        lottery.endTime > block.timestamp &&
         lottery.startTime <= block.timestamp,
       "current lottery must be active; current time must be within lottery time frame"
     );
@@ -83,14 +87,20 @@ contract Lottery is Ownable {
   // emit when user added
   event ticketsMinted(address player, uint256 numTicketsMinted);
   // emit when lottery drawing happens; winner found
-  event triggerLottery(uint256 lotteryId, uint256 winningIndex);
+  event triggerLottery(uint256 lotteryId, uint256 _winningTicketIndex);
   // emit when funds withdrawn
   event withdrawalMade(address winner, uint256 lotteryId);
+  event maxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
 
   /**
    * Contract initialization.
    */
   constructor() {}
+
+  function setMaxPlayersAllowed(uint256 _maxPlayersAllowed) external onlyOwner {
+    maxPlayersAllowed = _maxPlayersAllowed;
+    emit maxPlayersAllowedUpdated(maxPlayersAllowed);
+  }
 
   /**
    * A function to initialize a lottery
@@ -160,19 +170,17 @@ contract Lottery is Ownable {
    *
    */
     uint256 numTicketsToMint = msg.value.div(MIN_DRAWING_INCREMENT);
-    require(numTicketsToMint >= 1);
-    //double check that at least one ticket to mint
-    players.push(msg.sender);
+    require(numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
+    // if player is "new" for current lottery
+    if (players[msg.sender] == false) {
+      require(numActivePlayers.add(1) <= maxPlayersAllowed); // capped max # of players
+      listOfPlayers[numActivePlayers] = msg.sender; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
+      players[msg.sender] = true;
+      numActivePlayers = numActivePlayers.add(1);
+    }
     tickets[msg.sender] = tickets[msg.sender].add(numTicketsToMint); // add existing, init 0
     prizeAmount = prizeAmount.add(msg.value);
     emit ticketsMinted(msg.sender, numTicketsToMint);
-  }
-
-  /**
-   * a function to get number of players in active lottery
-   */
-  function getNumPlayers() public view returns (uint256) {
-    return players.length;
   }
 
   /**
@@ -191,13 +199,12 @@ contract Lottery is Ownable {
     */
 
     playerTicketDistribution();
-    uint256 winningIndex = performRandomizedDrawing();
-    address winningAddress = findWinningAddress(winningIndex);
+    uint256 _winningTicketIndex = performRandomizedDrawing();
+    address winningAddress = findWinningAddress(_winningTicketIndex);
     designateWinnerAndDepositePrize(winningAddress);
     resetLottery();
 
-    emit triggerLottery(currentLotteryId, winningIndex);
-    currentLotteryId = currentLotteryId.add(1);
+    emit triggerLottery(currentLotteryId, _winningTicketIndex);
   }
 
   /**
@@ -225,7 +232,7 @@ contract Lottery is Ownable {
       // if you do it in the moment, if a user adds some eth, then more eth in separate tranches
       // you have to track index -> user instead of user -> index, much less efficient
       // ie need an array of length numTickets instead of just length numPlayers
-      address playerAddress = players[i];
+      address playerAddress = listOfPlayers[i];
       uint256 numTickets = tickets[playerAddress];
       ticketDistribution[i] = TicketStruct({
         playerAddress: playerAddress,
@@ -263,19 +270,19 @@ contract Lottery is Ownable {
    search for winning address
    * private internal function, only called during lottery triggered
    */
-  function findWinningAddress(uint256 winningIndex)
+  function findWinningAddress(uint256 _winningTicketIndex)
     private
     returns (address winningAddress)
   {
     console.log("getLottery");
     /*
     - based on given winning index id:
-    - set winningIndex state
+    - set _winningTicketIndex state
     - search for  which user has won
     - 
     */
-    winningTicketIndex = winningIndex;
-    address winningAddress = address(0);
+    winningTicketIndex = _winningTicketIndex;
+    winningAddress = address(0);
     // do binary search on ticketDistribution array to find winner
     bool isWinnerFound = false;
     uint256 searchIndex = totalNumTickets.div(2);
@@ -303,10 +310,7 @@ contract Lottery is Ownable {
   /**
    *
    */
-  function designateWinnerAndDepositePrize(address winningAddress)
-    private
-    returns (bool isActive)
-  {
+  function designateWinnerAndDepositePrize(address winningAddress) private {
     console.log("designateWinnerAndDepositePrize");
     /*
     - send funds to user
@@ -321,7 +325,7 @@ contract Lottery is Ownable {
    * designate winner of a lottery
    * private internal function, only called during lottery triggered
    */
-  function resetLottery() private returns (bool isActive) {
+  function resetLottery() private {
     console.log("getLottery");
     /*
     - reset winningTicketIndex
@@ -336,17 +340,15 @@ contract Lottery is Ownable {
     winningTicketIndex = 0;
     totalNumTickets = 0;
     numActivePlayers = 0;
+    lotteries[currentLotteryId].isActive = false;
+    currentLotteryId = currentLotteryId.add(1);
   }
 
   /**
    * allow winner to withdraw prize
    - check winner is calling this
    */
-  function withdraw(uint256 lotteryId)
-    external
-    payable
-    returns (bool isActive)
-  {
+  function withdraw(uint256 lotteryId) external payable {
     console.log("withdraw");
     /*
     - send funds to user
