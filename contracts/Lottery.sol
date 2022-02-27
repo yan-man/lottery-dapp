@@ -4,11 +4,13 @@ pragma solidity ^0.8.0;
 
 // load other contracts
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
 contract Lottery is Ownable {
   using SafeMath for uint256;
+  using Math for uint256;
 
   // State Variables
   struct LotteryStruct {
@@ -29,17 +31,18 @@ contract Lottery is Ownable {
 
   uint256 public maxPlayersAllowed = 1000;
   uint256 public currentLotteryId = 0;
+  uint256 public numLotteries = 0;
   uint256 public prizeAmount; // key is lotteryId
 
   TicketStruct[] public ticketDistribution;
   address[] public listOfPlayers;
 
-  uint256 numActivePlayers;
-  uint256 totalNumTickets;
-  uint256 winningTicketIndex;
+  uint256 public numActivePlayers;
+  uint256 public totalNumTickets;
+  uint256 public winningTicketIndex;
 
   mapping(address => bool) public players;
-  mapping(address => uint256) tickets;
+  mapping(address => uint256) public tickets;
   mapping(uint256 => LotteryStruct) public lotteries; // key is lotteryId
   mapping(uint256 => mapping(address => uint256)) public pendingWithdrawals; // pending withdrawals for each winner, key is lotteryId
 
@@ -52,13 +55,6 @@ contract Lottery is Ownable {
       lottery.isActive == false,
       "current lottery must be inactive to save a new one"
     );
-    // if there is an existing lottery, the current time must be after end date of previous one
-    if (currentLotteryId > 0) {
-      require(
-        startTime >= lottery.endTime,
-        "if there is a previous lottery, new start date must be after prev one has ended"
-      );
-    }
     _;
   }
   modifier isLotteryMintingOpen() {
@@ -75,7 +71,7 @@ contract Lottery is Ownable {
     // time is within start/end dates
     // amount sent is > floor amt
     require(
-      msg.value >= MIN_DRAWING_INCREMENT,
+      msg.value.min(MIN_DRAWING_INCREMENT) >= MIN_DRAWING_INCREMENT,
       "msg value must be greater than min amount allowed"
     );
     _;
@@ -97,9 +93,25 @@ contract Lottery is Ownable {
    */
   constructor() {}
 
+  /**
+   * A function to update max players allowed criteria
+   * owner only
+   *
+   */
   function setMaxPlayersAllowed(uint256 _maxPlayersAllowed) external onlyOwner {
     maxPlayersAllowed = _maxPlayersAllowed;
     emit maxPlayersAllowedUpdated(maxPlayersAllowed);
+  }
+
+  /**
+   * A function to force update lottery status isActive = false
+   * if valid and exists, set inactive
+   * owner only
+   *
+   */
+  function setLotteryInactive() external onlyOwner {
+    // if lottery is set to inactive, return funds to participants
+    lotteries[currentLotteryId].isActive = false;
   }
 
   /**
@@ -131,26 +143,8 @@ contract Lottery is Ownable {
       endTime: endTime,
       isActive: true
     });
+    numLotteries = numLotteries.add(1);
     emit NewLottery(msg.sender, startTime, endTime);
-  }
-
-  /**
-   * A function to get info on a specific lottery
-   *
-   *
-   */
-  function getLottery(uint256 lotteryId)
-    external
-    view
-    returns (
-      uint256 startTime,
-      uint256 endTime,
-      bool isActive
-    )
-  {
-    console.log("getLottery");
-    LotteryStruct memory lottery = lotteries[lotteryId];
-    return (lottery.startTime, lottery.endTime, lottery.isActive);
   }
 
   /**
@@ -174,12 +168,18 @@ contract Lottery is Ownable {
     // if player is "new" for current lottery
     if (players[msg.sender] == false) {
       require(numActivePlayers.add(1) <= maxPlayersAllowed); // capped max # of players
-      listOfPlayers[numActivePlayers] = msg.sender; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
+      if (listOfPlayers.length > numActivePlayers) {
+        listOfPlayers[numActivePlayers] = msg.sender; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
+      } else {
+        listOfPlayers.push(msg.sender);
+      }
+
       players[msg.sender] = true;
       numActivePlayers = numActivePlayers.add(1);
     }
     tickets[msg.sender] = tickets[msg.sender].add(numTicketsToMint); // add existing, init 0
     prizeAmount = prizeAmount.add(msg.value);
+    totalNumTickets = totalNumTickets.add(numTicketsToMint);
     emit ticketsMinted(msg.sender, numTicketsToMint);
   }
 
