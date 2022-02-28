@@ -294,9 +294,15 @@ describe("Lottery contract", function () {
                 ).to.be.equal(expectedWinnings);
               });
               describe("...After deposit winnings", function () {
-                let expectedWinnings, currentLotteryId;
+                let expectedWinnings, currentLotteryId, provider;
+                const winnerBalance = {};
+
                 beforeEach(async function () {
+                  provider = waffle.provider;
                   currentLotteryId = await LotteryContract.currentLotteryId();
+                  winnerBalance.initial = await provider.getBalance(
+                    winningTicketFull.addr
+                  );
                   await LotteryContract.triggerDepositWinnings();
                   expectedWinnings = expectedNumTotalTicketsMinted.mul(
                     expectedMinAmountInWei
@@ -304,38 +310,46 @@ describe("Lottery contract", function () {
                 });
                 it("Should allow winner to withdarw", async function () {
                   // winner should withdraw winnings
-                  const winningAddr = addrs.filter((addr) => {
+
+                  const expectedWinningAddr = addrs.filter((addr) => {
                     return addr.address == winningTicketFull.addr;
                   })[0];
-                  console.log(
+                  const pendingWithdrawal =
                     await LotteryContract.pendingWithdrawals(
                       currentLotteryId.toNumber(),
-                      winningTicketFull.addr
-                    )
-                  );
-                  // console.log(addrs[1] == winningAddr);
-                  // console.log(winningAddr);
-                  // console.log(addrs[1]);
+                      expectedWinningAddr.address
+                    );
+
+                  expect(pendingWithdrawal).to.be.equal(expectedWinnings);
+
                   const tx = await LotteryContract.connect(
-                    winningAddr
+                    expectedWinningAddr
                   ).withdraw(currentLotteryId.toNumber());
-                  // // console.log(tx);
                   const receipt = await tx.wait();
 
-                  const { winnerAddress, lotteryId } = {
+                  const { winnerAddress, withdrawalAmount } = {
                     ...receipt.events[0].args,
                   };
 
-                  // console.log(winnerAddress);
-                  // console.log(lotteryId);
+                  expect(winnerAddress).to.be.equal(
+                    expectedWinningAddr.address
+                  );
+                  expect(pendingWithdrawal).to.be.equal(withdrawalAmount);
 
-                  console.log(receipt.events[0].args);
+                  winnerBalance.final = await provider.getBalance(
+                    winnerAddress
+                  );
 
-                  // const provider = waffle.provider;
-                  // const balance0ETH = await provider.getBalance(
-                  //   addrs[1].address
-                  // );
-                  // console.log(balance0ETH);
+                  const winningsWithdrawnSuccessfully = winnerBalance.final.sub(
+                    winnerBalance.initial
+                  );
+
+                  // expect deposited winnings; ie at least some eth deposited
+                  expect(winningsWithdrawnSuccessfully).to.be.above(0);
+                  // expect winnings to be the expected winnings, minus gas and commission fees
+                  expect(expectedWinnings).to.be.above(
+                    winningsWithdrawnSuccessfully
+                  );
                 });
               });
             });
