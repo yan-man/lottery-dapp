@@ -293,6 +293,21 @@ describe("Lottery contract", function () {
                   )
                 ).to.be.equal(expectedWinnings);
               });
+              describe("...After deposit winnings", function () {
+                let expectedWinnings;
+                beforeEach(async function () {
+                  const currentLotteryId =
+                    await LotteryContract.currentLotteryId();
+                  await LotteryContract.triggerDepositWinnings();
+                  expectedWinnings = expectedNumTotalTicketsMinted.mul(
+                    expectedMinAmountInWei
+                  );
+                });
+                it("Should allow winner to withdarw", async function () {
+                  // winner should withdraw winnings
+                  console.log(winningTicketFull);
+                });
+              });
             });
           });
           it("Should not trigger lottery drawing if not owner", async function () {});
