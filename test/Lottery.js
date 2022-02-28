@@ -22,7 +22,7 @@ describe("Lottery contract", function () {
 
   // You can nest describe calls to create subsections.
   describe("1)...Deployment", function () {
-    it("Should set the right owner", async function () {
+    it("*Happy Path: Should set the right owner", async function () {
       expect(await LotteryContract.owner()).to.equal(owner.address);
     });
 
@@ -139,14 +139,16 @@ describe("Lottery contract", function () {
     });
 
     describe("...After player1 mints tickets", function () {
-      let expectedTotalNumTicketsMinted, numTicketsPlayer1;
+      let expectedTotalNumTicketsMinted,
+        expectedNumTicketsPlayer1,
+        expectedNumTicketsPlayer2;
       beforeEach(async function () {
         const value = ethers.utils.parseEther("1.0");
         const tx = await LotteryContract.mintLotteryTickets({
           value: value, // Sends exactly 1.0 ether
         });
         expectedTotalNumTicketsMinted = value.div(expectedMinAmountInWei);
-        numTicketsPlayer1 = expectedTotalNumTicketsMinted;
+        expectedNumTicketsPlayer1 = expectedTotalNumTicketsMinted;
       });
       it("Should mint lottery tickets for new player2", async function () {
         const value = ethers.utils.parseEther("0.5");
@@ -185,6 +187,7 @@ describe("Lottery contract", function () {
           expectedTotalNumTicketsMinted = expectedTotalNumTicketsMinted.add(
             value.div(expectedMinAmountInWei)
           );
+          expectedNumTicketsPlayer2 = value.div(expectedMinAmountInWei);
         });
         it("Should mint more lottery tickets for player1", async function () {
           const value = ethers.utils.parseEther("0.1");
@@ -194,12 +197,14 @@ describe("Lottery contract", function () {
           const receipt = await tx.wait();
 
           const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
-          numTicketsPlayer1 = numTicketsPlayer1.add(expectedNumTicketsMinted);
+          expectedNumTicketsPlayer1 = expectedNumTicketsPlayer1.add(
+            expectedNumTicketsMinted
+          );
           expectedTotalNumTicketsMinted = expectedTotalNumTicketsMinted.add(
             expectedNumTicketsMinted
           );
 
-          // check emitted event details
+          // check emitted event - player addr added / num lotto tickets granted
           const { player, numTicketsMinted } = { ...receipt.events[0].args };
           expect(player).to.be.equal(owner.address);
           expect(numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
@@ -211,11 +216,14 @@ describe("Lottery contract", function () {
           expect(await LotteryContract.totalNumTickets()).to.be.equal(
             expectedTotalNumTicketsMinted
           );
+          expect(await LotteryContract.totalNumTickets()).to.be.equal(
+            expectedNumTicketsPlayer1.add(expectedNumTicketsPlayer2)
+          );
           expect(await LotteryContract.players(owner.address)).to.be.equal(
             true
           );
           expect(await LotteryContract.tickets(owner.address)).to.be.equal(
-            numTicketsPlayer1
+            expectedNumTicketsPlayer1
           );
         });
         describe("...After more lottery tickets for player1 are minted", function () {
