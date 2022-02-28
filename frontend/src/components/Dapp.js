@@ -55,6 +55,8 @@ export class Dapp extends React.Component {
       transactionError: undefined,
       networkError: undefined,
       currentLotteryId: undefined,
+      contractAddress: undefined,
+      contractOwner: undefined,
     };
 
     this.state = this.initialState;
@@ -90,10 +92,46 @@ export class Dapp extends React.Component {
       return <Loading />;
     }
 
+    const { contractAddress, contractOwner, balance, selectedAddress } = {
+      ...this.state,
+    };
+    const isOwner =
+      selectedAddress.toUpperCase() == contractOwner.toUpperCase();
     return (
-      <div>
-        <h1>Welcome to the decentralized lottery</h1>
-        <h1>{this.state.currentLotteryId}</h1>
+      <div className="container p-4">
+        <div className="row">
+          <div className="col-12">
+            <h1>The Global DEGENtralized Lottery</h1>
+          </div>
+        </div>
+        <hr />
+        <div className="row">
+          <div className="col-12">
+            <p>Contract Address: {contractAddress}</p>
+            <p>Contract Owner: {contractOwner}</p>
+          </div>
+        </div>
+        <hr />
+        <div className="row">
+          <div className="col-12">
+            <p>
+              Welcome <b>{isOwner ? "OWNER" : selectedAddress}</b>, you have{" "}
+              <b>
+                {ethers.utils.commify(
+                  ethers.utils.formatUnits(this.state.balance).toString()
+                )}{" "}
+                eth
+              </b>{" "}
+              to mint lottery tickets with.
+            </p>
+            {isOwner && (
+              <p>
+                *As the owner, you can also create new lotteries and do other
+                shit.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     );
 
@@ -228,9 +266,9 @@ export class Dapp extends React.Component {
     // Fetching the token data and the user's balance are specific to this
     // sample project, but you can reuse the same initialization pattern.
     this._initializeEthers();
-    this._updateLotteryDetails();
+    this._updateLotteryContractDetails();
     // this._getTokenData();
-    // this._startPollingData();
+    this._startPollingData();
   }
 
   async _initializeEthers() {
@@ -254,9 +292,12 @@ export class Dapp extends React.Component {
   // don't need to poll it. If that's the case, you can just fetch it when you
   // initialize the app, as we do with the token data.
   _startPollingData() {
-    // this._pollDataInterval = setInterval(() => this._updateBalance(), 5000);
+    this._pollDataInterval = setInterval(
+      () => this._updateUserAndLotteryDetails(),
+      5000
+    );
     // We run it once immediately so we don't have to wait for it
-    this._updateBalance();
+    this._updateUserAndLotteryDetails();
   }
 
   _stopPollingData() {
@@ -273,14 +314,20 @@ export class Dapp extends React.Component {
     this.setState({ tokenData: { name, symbol } });
   }
 
-  async _updateBalance() {
-    const balance = await this._token.balanceOf(this.state.selectedAddress);
-    this.setState({ balance });
+  async _updateUserAndLotteryDetails() {
+    console.log("update balance");
+    const balance = await this._provider.getBalance(this.state.selectedAddress);
+    const currentLotteryId = await this._lottery.currentLotteryId();
+    this.setState({ balance, currentLotteryId: currentLotteryId });
   }
 
-  async _updateLotteryDetails() {
-    const currentLotteryId = await this._lottery.currentLotteryId();
-    this.setState({ currentLotteryId: currentLotteryId.toString() });
+  async _updateLotteryContractDetails() {
+    console.log("_updateLotteryContractDetails");
+    const owner = await this._lottery.owner();
+    this.setState({
+      contractAddress: contractAddress.Lottery,
+      contractOwner: owner,
+    });
   }
 
   // This method sends an ethereum transaction to transfer tokens.
