@@ -1,12 +1,10 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
+const { ethers, waffle } = require("hardhat");
 
 describe("Lottery contract", function () {
   let Lottery;
   let LotteryContract;
-  let owner;
-  let addr1;
-  let addr2;
   let addrs;
   const unixtimeNow = Math.floor(Date.now() / 1000);
   const daysInSeconds = 24 * 3600;
@@ -14,7 +12,7 @@ describe("Lottery contract", function () {
 
   beforeEach(async function () {
     Lottery = await ethers.getContractFactory("Lottery");
-    [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+    [...addrs] = await ethers.getSigners();
 
     LotteryContract = await Lottery.deploy();
     await LotteryContract.deployed();
@@ -23,7 +21,7 @@ describe("Lottery contract", function () {
   // You can nest describe calls to create subsections.
   describe("1)...Deployment", function () {
     it("*Happy Path: Should set the right owner", async function () {
-      expect(await LotteryContract.owner()).to.equal(owner.address);
+      expect(await LotteryContract.owner()).to.equal(addrs[0].address);
     });
 
     it("Should return default values", async function () {
@@ -55,7 +53,7 @@ describe("Lottery contract", function () {
       const { creator, startTime, endTime } = receipt.events[0].args;
 
       expect(receipt.events.length).to.equal(1); // 1 event emitted
-      expect(creator).to.equal(owner.address);
+      expect(creator).to.equal(addrs[0].address);
       expect(startTime).to.equal(expectedStartTime);
       expect(endTime).to.equal(expectedEndTime);
 
@@ -124,16 +122,18 @@ describe("Lottery contract", function () {
 
       // check emitted event details
       const { player, numTicketsMinted } = { ...receipt.events[0].args };
-      expect(player).to.be.equal(owner.address);
+      expect(player).to.be.equal(addrs[0].address);
       expect(numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
 
-      expect(await LotteryContract.listOfPlayers(0)).to.be.equal(owner.address);
+      expect(await LotteryContract.listOfPlayers(0)).to.be.equal(
+        addrs[0].address
+      );
       expect(await LotteryContract.numActivePlayers()).to.be.equal(1);
       expect(await LotteryContract.numTotalTickets()).to.be.equal(
         numTicketsMinted
       );
-      expect(await LotteryContract.players(owner.address)).to.be.equal(true);
-      expect(await LotteryContract.tickets(owner.address)).to.be.equal(
+      expect(await LotteryContract.players(addrs[0].address)).to.be.equal(true);
+      expect(await LotteryContract.tickets(addrs[0].address)).to.be.equal(
         expectedNumTicketsMinted
       );
     });
@@ -152,12 +152,12 @@ describe("Lottery contract", function () {
       });
       it("Should mint lottery tickets for new player2", async function () {
         const value = ethers.utils.parseEther("0.5");
-        const tx = await LotteryContract.connect(addr1).mintLotteryTickets({
+        const tx = await LotteryContract.connect(addrs[1]).mintLotteryTickets({
           value: value, // Sends exactly 1.0 ether
         });
         const receipt = await tx.wait();
 
-        player2 = addr1.address;
+        player2 = addrs[1].address;
 
         const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
         expectedNumTotalTicketsMinted = expectedNumTotalTicketsMinted.add(
@@ -181,7 +181,7 @@ describe("Lottery contract", function () {
       describe("...After player2 mints tickets", function () {
         beforeEach(async function () {
           const value = ethers.utils.parseEther("0.5");
-          await LotteryContract.connect(addr1).mintLotteryTickets({
+          await LotteryContract.connect(addrs[1]).mintLotteryTickets({
             value: value,
           });
           expectedNumTotalTicketsMinted = expectedNumTotalTicketsMinted.add(
@@ -206,11 +206,11 @@ describe("Lottery contract", function () {
 
           // check emitted event - player addr added / num lotto tickets granted
           const { player, numTicketsMinted } = { ...receipt.events[0].args };
-          expect(player).to.be.equal(owner.address);
+          expect(player).to.be.equal(addrs[0].address);
           expect(numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
 
           expect(await LotteryContract.listOfPlayers(0)).to.be.equal(
-            owner.address
+            addrs[0].address
           );
           expect(await LotteryContract.numActivePlayers()).to.be.equal(2);
           expect(await LotteryContract.numTotalTickets()).to.be.equal(
@@ -219,10 +219,10 @@ describe("Lottery contract", function () {
           expect(await LotteryContract.numTotalTickets()).to.be.equal(
             expectedNumTicketsPlayer1.add(expectedNumTicketsPlayer2)
           );
-          expect(await LotteryContract.players(owner.address)).to.be.equal(
+          expect(await LotteryContract.players(addrs[0].address)).to.be.equal(
             true
           );
-          expect(await LotteryContract.tickets(owner.address)).to.be.equal(
+          expect(await LotteryContract.tickets(addrs[0].address)).to.be.equal(
             expectedNumTicketsPlayer1
           );
         });
@@ -240,8 +240,8 @@ describe("Lottery contract", function () {
           it("Should trigger lottery drawing", async function () {
             // check ticket distribution, perform randomized drawing, designated winner, deposited prize, reset
             // emit event
-            // console.log(await LotteryContract.tickets(owner.address));
-            // console.log(await LotteryContract.tickets(addr1.address));
+            // console.log(await LotteryContract.tickets(addrs[0].address));
+            // console.log(await LotteryContract.tickets(addrs[1].address));
             await LotteryContract.triggerLotteryDrawing();
             const winningTicket = await LotteryContract.winningTicket();
 
@@ -294,10 +294,9 @@ describe("Lottery contract", function () {
                 ).to.be.equal(expectedWinnings);
               });
               describe("...After deposit winnings", function () {
-                let expectedWinnings;
+                let expectedWinnings, currentLotteryId;
                 beforeEach(async function () {
-                  const currentLotteryId =
-                    await LotteryContract.currentLotteryId();
+                  currentLotteryId = await LotteryContract.currentLotteryId();
                   await LotteryContract.triggerDepositWinnings();
                   expectedWinnings = expectedNumTotalTicketsMinted.mul(
                     expectedMinAmountInWei
@@ -305,7 +304,38 @@ describe("Lottery contract", function () {
                 });
                 it("Should allow winner to withdarw", async function () {
                   // winner should withdraw winnings
-                  console.log(winningTicketFull);
+                  const winningAddr = addrs.filter((addr) => {
+                    return addr.address == winningTicketFull.addr;
+                  })[0];
+                  console.log(
+                    await LotteryContract.pendingWithdrawals(
+                      currentLotteryId.toNumber(),
+                      winningTicketFull.addr
+                    )
+                  );
+                  // console.log(addrs[1] == winningAddr);
+                  // console.log(winningAddr);
+                  // console.log(addrs[1]);
+                  const tx = await LotteryContract.connect(
+                    winningAddr
+                  ).withdraw(currentLotteryId.toNumber());
+                  // // console.log(tx);
+                  const receipt = await tx.wait();
+
+                  const { winnerAddress, lotteryId } = {
+                    ...receipt.events[0].args,
+                  };
+
+                  // console.log(winnerAddress);
+                  // console.log(lotteryId);
+
+                  console.log(receipt.events[0].args);
+
+                  // const provider = waffle.provider;
+                  // const balance0ETH = await provider.getBalance(
+                  //   addrs[1].address
+                  // );
+                  // console.log(balance0ETH);
                 });
               });
             });

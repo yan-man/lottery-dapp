@@ -95,7 +95,7 @@ contract Lottery is Ownable {
   );
   event triggerLotteryWinningAddress(uint256 lotteryId, address winningAddress);
   // emit when funds withdrawn
-  event withdrawalMade(address winner, uint256 lotteryId);
+  event withdrawalMade(address winnerAddress, uint256 withdrawalAmount);
   event maxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
 
   /**
@@ -233,7 +233,7 @@ contract Lottery is Ownable {
     findWinningAddress(winningTicket.winningTicketIndex);
     address winningAddress = winningTicket.addr;
 
-    designateWinnerAndDepositePrize(winningAddress);
+    designateWinnerAndDepositPrize(winningAddress);
     resetLottery();
     emit triggerLotteryWinningAddress(currentLotteryId, winningAddress);
   }
@@ -373,8 +373,8 @@ contract Lottery is Ownable {
   /**
    *
    */
-  function designateWinnerAndDepositePrize(address winningAddress) private {
-    console.log("designateWinnerAndDepositePrize");
+  function designateWinnerAndDepositPrize(address winningAddress) private {
+    console.log("designateWinnerAndDepositPrize");
     /*
     - send funds to user
     - update pending withdrawals for user address
@@ -421,7 +421,10 @@ contract Lottery is Ownable {
     - update pending withdrawals var
     */
 
-    require(pendingWithdrawals[lotteryId][msg.sender] > 0);
+    require(
+      pendingWithdrawals[lotteryId][msg.sender] > 0,
+      "require pending withdrawals to have funds for given user"
+    );
     uint256 withdrawalAmount = pendingWithdrawals[lotteryId][msg.sender];
     pendingWithdrawals[lotteryId][msg.sender] = 0;
     payable(msg.sender).transfer(withdrawalAmount);
