@@ -32,7 +32,7 @@ contract Lottery is Ownable {
   // save as many as you want; only 1 active at a time
   // don't need to explicitly record history, already on BC
   uint256 public constant MIN_DRAWING_INCREMENT = 100000000000000; //0.0001 ETH; min eth amount to enter lottery
-  uint256 public constant NUMBER_OF_DAYS = 7;
+  uint256 public constant NUMBER_OF_HOURS = 168; // 1 week by default
   uint256 public maxLoops = 10;
 
   uint256 public maxPlayersAllowed = 1000;
@@ -65,12 +65,20 @@ contract Lottery is Ownable {
     _;
   }
   modifier isLotteryMintingOpen() {
-    LotteryStruct memory lottery = lotteries[currentLotteryId];
     require(
-      lottery.isActive == true &&
-        lottery.endTime > block.timestamp &&
-        lottery.startTime <= block.timestamp,
+      lotteries[currentLotteryId].isActive == true &&
+        lotteries[currentLotteryId].endTime > block.timestamp &&
+        lotteries[currentLotteryId].startTime <= block.timestamp,
       "current lottery must be active; current time must be within lottery time frame"
+    );
+    _;
+  }
+  modifier isLotteryMintingCompleted() {
+    require(
+      (lotteries[currentLotteryId].isActive == true &&
+        lotteries[currentLotteryId].endTime < block.timestamp) ||
+        lotteries[currentLotteryId].isActive == false,
+      "current lottery must be active; minting period must be closed"
     );
     _;
   }
@@ -120,9 +128,21 @@ contract Lottery is Ownable {
    * owner only
    *
    */
-  function setLotteryInactive() external onlyOwner {
+  function setLotteryInactive() public onlyOwner {
     // if lottery is set to inactive, return funds to participants
     lotteries[currentLotteryId].isActive = false;
+  }
+
+  /**
+   * A function to force update lottery status isActive = false
+   * if valid and exists, set inactive
+   * owner only
+   *
+   */
+  function cancelLottery() external onlyOwner {
+    setLotteryInactive();
+    resetLottery();
+    // also refund funds to users
   }
 
   /**
@@ -133,7 +153,7 @@ contract Lottery is Ownable {
    start date must start after prev end date 
    * 
    */
-  function initLottery(uint256 startTime, uint256 numDays)
+  function initLottery(uint256 startTime, uint256 numHours)
     external
     isNewLotteryValid(startTime)
   {
@@ -145,10 +165,10 @@ contract Lottery is Ownable {
      */
     // basically default value
     // if set to 0, default to explicit default number of days
-    if (numDays == 0) {
-      numDays = NUMBER_OF_DAYS;
+    if (numHours == 0) {
+      numHours = NUMBER_OF_HOURS;
     }
-    uint256 endTime = startTime.add(numDays * 1 days);
+    uint256 endTime = startTime.add(numHours * 1 hours);
     lotteries[currentLotteryId] = LotteryStruct({
       lotteryId: currentLotteryId,
       startTime: startTime,
@@ -199,7 +219,7 @@ contract Lottery is Ownable {
    * a function for users to trigger lottery drawing
    *  - modifier - check that lottery end date reached
    */
-  function triggerLotteryDrawing() public {
+  function triggerLotteryDrawing() public isLotteryMintingCompleted {
     console.log("triggerLotteryDrawing");
     /*
     - calculate each player's odds
@@ -211,8 +231,8 @@ contract Lottery is Ownable {
     */
 
     playerTicketDistribution();
-    // uint256 winningTicketIndex = performRandomizedDrawing();
-    uint256 winningTicketIndex = 11000;
+    uint256 winningTicketIndex = performRandomizedDrawing();
+
     winningTicket = WinningTicketStruct({
       winningTicketIndex: winningTicketIndex,
       addr: address(0)

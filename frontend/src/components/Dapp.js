@@ -57,9 +57,6 @@ export class Dapp extends React.Component {
       txBeingSent: undefined,
       transactionError: undefined,
       networkError: undefined,
-      currentLotteryId: undefined,
-      contractAddress: undefined,
-      contractOwner: undefined,
       lottery: {},
     };
 
@@ -92,23 +89,14 @@ export class Dapp extends React.Component {
 
     // If the token data or the user's balance hasn't loaded yet, we show
     // a loading component.
-    if (!this.state.selectedAddress || !this.state.contractOwner) {
+    if (!this.state.selectedAddress || !this.state.lottery.owner) {
       return <Loading />;
     }
-
-    const {
-      contractAddress,
-      contractOwner,
-      balance,
-      selectedAddress,
-      lottery,
-      minDrawingIncrement,
-      maxPlayersAllowed,
-    } = {
+    const { lottery, selectedAddress, balance } = {
       ...this.state,
     };
     const isOwner =
-      selectedAddress.toUpperCase() === contractOwner.toUpperCase();
+      selectedAddress.toUpperCase() === lottery.owner.toUpperCase();
     return (
       <div className="container p-4">
         <div className="row">
@@ -119,8 +107,8 @@ export class Dapp extends React.Component {
         <hr />
         <div className="row">
           <div className="col-12">
-            <p>Contract Address: {contractAddress}</p>
-            <p>Contract Owner: {contractOwner}</p>
+            <p>Contract Address: {lottery.address}</p>
+            <p>Contract Owner: {lottery.owner}</p>
           </div>
         </div>
         <hr />
@@ -138,23 +126,35 @@ export class Dapp extends React.Component {
             </p>
           </div>
         </div>
-        {isOwner && <OwnerOptions _initLottery={this._initLottery} />}
+        {isOwner && (
+          <OwnerOptions
+            _initLottery={this._initLottery}
+            _triggerLotteryDrawing={this._triggerLotteryDrawing}
+            _triggerSetLotteryInactive={this._triggerSetLotteryInactive}
+          />
+        )}
         <hr />
         <div>
           <h3>Ground Rules</h3>
           <p>
-            Minimum Buy In:{" "}
+            Individual Ticket Cost:{" "}
             <b>
               {ethers.utils.commify(
-                ethers.utils.formatUnits(minDrawingIncrement).toString()
+                ethers.utils.formatUnits(lottery.minDrawingIncrement).toString()
               )}{" "}
               eth
             </b>
           </p>
-          <p>Max Degens Allowed: {maxPlayersAllowed.toString()}</p>
+          <p>Max Degens Allowed: {lottery.maxPlayersAllowed.toString()}</p>
         </div>
         <hr />
-        {lottery.isActive && <ActiveLotteryDisplay lottery={lottery} />}
+        {lottery.isActive && (
+          <ActiveLotteryDisplay
+            selectedAddress={selectedAddress}
+            lottery={lottery}
+            _handleMintLotteryTickets={this._mintLotteryTickets}
+          />
+        )}
       </div>
     );
 
@@ -346,31 +346,43 @@ export class Dapp extends React.Component {
     this.setState({ balance });
   }
 
+  _mintLotteryTickets = async (value) => {
+    const mintValue = await ethers.utils.parseEther(value);
+    await this._lottery.mintLotteryTickets({ value: mintValue });
+  };
+
   async _updateLottery() {
     console.log("_updateLottery");
-    const owner = await this._lottery.owner();
-    const minDrawingIncrement = await this._lottery.MIN_DRAWING_INCREMENT();
-    const maxPlayersAllowed = await this._lottery.maxPlayersAllowed();
     const currentLotteryId = await this._lottery.currentLotteryId();
-    const prizeAmount = await this._lottery.prizeAmount();
+    const numActivePlayers = await this._lottery.numActivePlayers();
 
-    const lottery = {
+    let lottery = {
       ...(await this._lottery.lotteries(currentLotteryId.toNumber())),
     };
 
-    const numActivePlayers = await this._lottery.numActivePlayers();
-    let activePlayer;
-    for (const ind = 0; ind < numActivePlayers; ind++) {
-      activePlayer = await this._lottery.numActivePlayers(ind);
-      console.log(activePlayer);
+    let activePlayers = [];
+    let playerAddress;
+    for (let ind = 0; ind < numActivePlayers; ind++) {
+      playerAddress = await this._lottery.listOfPlayers(ind);
+      activePlayers.push(playerAddress);
     }
-
-    this.setState({ currentLotteryId: currentLotteryId, lottery });
+    const newState = {
+      ...lottery,
+      id: currentLotteryId,
+      address: contractAddress.Lottery,
+      owner: await this._lottery.owner(),
+      minDrawingIncrement: await this._lottery.MIN_DRAWING_INCREMENT(),
+      maxPlayersAllowed: await this._lottery.maxPlayersAllowed(),
+      numTotalTickets: await this._lottery.numTotalTickets(),
+      activePlayers,
+      numActivePlayers,
+      prizeAmount: await this._lottery.prizeAmount(),
+      isUserActive: await this._lottery.players(this.state.selectedAddress),
+      numTickets: await this._lottery.tickets(this.state.selectedAddress),
+    };
+    console.log(newState);
     this.setState({
-      contractAddress: contractAddress.Lottery,
-      contractOwner: owner,
-      minDrawingIncrement,
-      maxPlayersAllowed,
+      lottery: newState,
     });
   }
 
@@ -378,6 +390,21 @@ export class Dapp extends React.Component {
     console.log("init lottery");
     const unixtimeNow = Math.floor(Date.now() / 1000);
     await this._lottery.initLottery(unixtimeNow, 7);
+    this._updateInfo();
+  };
+
+  _triggerLotteryDrawing = async () => {
+    console.log("_triggerLotteryDrawing");
+    await this._lottery.triggerLotteryDrawing();
+    await this._lottery.triggerDepositWinnings();
+    const winningTicket = await this._lottery.winningTicket();
+    console.log(winningTicket);
+    this._updateInfo();
+  };
+
+  _triggerSetLotteryInactive = async () => {
+    console.log("_triggerSetLotteryInactive");
+    await this._lottery.setLotteryInactive();
     this._updateInfo();
   };
 
