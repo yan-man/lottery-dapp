@@ -20,6 +20,7 @@ describe("Lottery contract", function () {
 
   // You can nest describe calls to create subsections.
   describe("1)...Deployment", function () {
+    // assume all variables related to uint256 are BigNumbers
     it("*Happy Path: Should set the right owner", async function () {
       expect(await LotteryContract.owner()).to.equal(addrs[0].address);
     });
@@ -73,6 +74,8 @@ describe("Lottery contract", function () {
   });
 
   describe("2)...After first lottery initialized", function () {
+    /// TASK: maybe put currentLotteryId into lottery object
+    /// for later tests when multiple lottos will be added (maybe concurrently)
     let currentLotteryId, owner;
     beforeEach(async function () {
       const tx = await LotteryContract.initLottery(unixtimeNow, 1);
@@ -144,19 +147,23 @@ describe("Lottery contract", function () {
       /// TASK
       /// refactor players to be one large array with all players, rather than each being coded as separate variable
       /// 30 min
-      let expectedNumTotalTicketsMinted, expectedNumTicketsPlayer1, player1;
+      const players = [];
+      let expectedNumTotalTicketsMinted;
       beforeEach(async function () {
-        player1 = addrs[0];
-        /// TASK
-        /// maybe a better name for "value" var; too generic
-        const value = ethers.utils.parseEther("1.0");
+        const player1 = addrs[0];
+        const mintValue = ethers.utils.parseEther("1.0");
         const tx = await LotteryContract.mintLotteryTickets({
-          value: value, // Sends exactly 1.0 ether
+          value: mintValue, // Sends exactly 1.0 ether
         });
         expectedNumTotalTicketsMinted = BigNumber.from(
-          value.div(expectedMinAmountInWei)
+          mintValue.div(expectedMinAmountInWei)
         );
-        expectedNumTicketsPlayer1 = expectedNumTotalTicketsMinted;
+        players.push({
+          addr: player1,
+          mintValue: mintValue,
+          expectedNumTickets: expectedNumTotalTicketsMinted,
+          numTickets: await LotteryContract.tickets(player1.address),
+        });
 
         /// TASK
         /// write a test to always check that total # of tickets per address is expected
@@ -165,17 +172,18 @@ describe("Lottery contract", function () {
       it("Should mint lottery tickets for new player2", async function () {
         const player2 = addrs[1];
 
-        const value = ethers.utils.parseEther("0.5");
+        const mintValue = ethers.utils.parseEther("0.5"); // eth
         const tx = await LotteryContract.connect(player2).mintLotteryTickets({
-          value: value, // Sends exactly 1.0 ether
+          value: mintValue,
         });
         const receipt = await tx.wait();
 
-        const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
+        const expectedNumTicketsMinted = mintValue.div(expectedMinAmountInWei);
         expectedNumTotalTicketsMinted = expectedNumTotalTicketsMinted.add(
           expectedNumTicketsMinted
         );
 
+        // event logs tests
         const { player, numTicketsMinted } = { ...receipt.events[0].args };
         expect(player).to.be.equal(player2.address);
         expect(numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
@@ -197,17 +205,23 @@ describe("Lottery contract", function () {
       });
       describe("...After player2 mints tickets", function () {
         /// TASK: combine into a single array/obj; global player obj
-        let player2, expectedNumTicketsPlayer2;
         beforeEach(async function () {
-          const value = ethers.utils.parseEther("0.5");
-          player2 = addrs[1];
+          const mintValue = ethers.utils.parseEther("0.5");
+          const player2 = addrs[1];
           await LotteryContract.connect(player2).mintLotteryTickets({
-            value: value,
+            value: mintValue,
           });
           expectedNumTotalTicketsMinted = expectedNumTotalTicketsMinted.add(
-            value.div(expectedMinAmountInWei)
+            mintValue.div(expectedMinAmountInWei)
           );
-          expectedNumTicketsPlayer2 = value.div(expectedMinAmountInWei);
+          expectedNumTicketsPlayer2 = mintValue.div(expectedMinAmountInWei);
+
+          players.push({
+            addr: player2,
+            mintValue: mintValue,
+            expectedNumTickets: expectedNumTicketsPlayer2,
+            numTickets: await LotteryContract.tickets(player2.address),
+          });
         });
         it("Should mint more lottery tickets for player1", async function () {
           const value = ethers.utils.parseEther("0.1");
@@ -248,22 +262,26 @@ describe("Lottery contract", function () {
         });
         describe("...After more lottery tickets for player1 are minted", function () {
           /// TASK: combined into a single array or obj; maybe combine with global player var
-          let expectedNumTicketsPlayer1, numTicketsPlayer1, numTicketsPlayer2;
+          // let expectedNumTicketsPlayer1, numTicketsPlayer1, numTicketsPlayer2;
           beforeEach(async function () {
-            const value = ethers.utils.parseEther("0.1");
+            const mintValue = ethers.utils.parseEther("0.1"); // eth
             const tx = await LotteryContract.mintLotteryTickets({
-              value: value,
+              value: mintValue,
             });
 
-            const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
+            /// TASK: maybe turn this into "calculateTicketAmount" function, ie divide by expectedMinAmountInWei
+            const expectedNumTicketsMinted = mintValue.div(
+              expectedMinAmountInWei
+            );
             expectedNumTotalTicketsMinted = expectedNumTotalTicketsMinted.add(
               expectedNumTicketsMinted
             );
-            expectedNumTicketsPlayer1 = expectedNumTicketsPlayer1.add(
+            players[1].expectedNumTickets = players[1].expectedNumTickets.add(
               expectedNumTicketsMinted
             );
-            numTicketsPlayer1 = await LotteryContract.tickets(player1.address);
-            numTicketsPlayer2 = await LotteryContract.tickets(player2.address);
+            players[1].numTickets = await LotteryContract.tickets(
+              players[1].address
+            );
           });
           it("Should trigger lottery drawing", async function () {
             // check ticket distribution, perform randomized drawing, designated winner, deposited prize, reset
@@ -283,9 +301,6 @@ describe("Lottery contract", function () {
             /// 30min
 
             const winningTicket = await LotteryContract.ticketDistribution();
-
-            console.log(numTicketsPlayer1);
-            console.log(numTicketsPlayer2);
 
             // during hard-coded testing, expect user 2 to be winner
             // expect(winningTicket.addr).to.be.equal(
