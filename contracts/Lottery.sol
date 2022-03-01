@@ -99,11 +99,16 @@ contract Lottery is Ownable {
   // emit when user added
   event ticketsMinted(address player, uint256 numTicketsMinted);
   // emit when lottery drawing happens; winner found
-  event triggerLotteryWinningIndex(
+  event triggerLotteryWinner(
     uint256 lotteryId,
-    uint256 winningTicketIndex
+    uint256 winningTicketIndex,
+    address winningAddress
   );
-  event triggerLotteryWinningAddress(uint256 lotteryId, address winningAddress);
+  event triggerLotteryWinningsDeposited(
+    uint256 lotteryId,
+    address winningAddress,
+    uint256 amountDeposited
+  );
   // emit when funds withdrawn
   event withdrawalMade(address winnerAddress, uint256 withdrawalAmount);
   event maxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
@@ -234,13 +239,13 @@ contract Lottery is Ownable {
 
     playerTicketDistribution();
     uint256 winningTicketIndex = performRandomizedDrawing();
+    findWinningAddress(winningTicketIndex);
 
-    winningTicket = WinningTicketStruct({
-      winningTicketIndex: winningTicketIndex,
-      addr: address(0)
-    });
-
-    emit triggerLotteryWinningIndex(currentLotteryId, winningTicketIndex);
+    emit triggerLotteryWinner(
+      currentLotteryId,
+      winningTicket.winningTicketIndex,
+      winningTicket.addr
+    );
   }
 
   function triggerDepositWinnings() public {
@@ -254,11 +259,14 @@ contract Lottery is Ownable {
     - reset players/lotto vals in state
     */
 
-    findWinningAddress(winningTicket.winningTicketIndex);
-    designateWinnerAndDepositPrize(winningTicket.addr);
-
-    emit triggerLotteryWinningAddress(currentLotteryId, winningTicket.addr);
-    // resetLottery();
+    pendingWithdrawals[currentLotteryId][winningTicket.addr] = prizeAmount;
+    prizeAmount = 0;
+    emit triggerLotteryWinningsDeposited(
+      currentLotteryId,
+      winningTicket.addr,
+      pendingWithdrawals[currentLotteryId][winningTicket.addr]
+    );
+    resetLottery();
   }
 
   /**
@@ -390,20 +398,6 @@ contract Lottery is Ownable {
     }
 
     return numActivePlayers;
-  }
-
-  /**
-   *
-   */
-  function designateWinnerAndDepositPrize(address winningAddress) private {
-    console.log("designateWinnerAndDepositPrize");
-    /*
-    - send funds to user
-    - update pending withdrawals for user address
-    - set prize to zero
-    */
-    pendingWithdrawals[currentLotteryId][winningAddress] = prizeAmount;
-    prizeAmount = 0;
   }
 
   /**
