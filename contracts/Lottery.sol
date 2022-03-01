@@ -79,7 +79,7 @@ contract Lottery is Ownable {
       (lotteries[currentLotteryId].isActive == true &&
         lotteries[currentLotteryId].endTime < block.timestamp) ||
         lotteries[currentLotteryId].isActive == false,
-      "current lottery must be active; minting period must be closed"
+      "current lottery must be active or minting period must be closed"
     );
     _;
   }
