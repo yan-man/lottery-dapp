@@ -19,6 +19,9 @@ import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
 
+import OwnerOptions from "./OwnerOptions";
+import ActiveLotteryDisplay from "./ActiveLotteryDisplay";
+
 // This is the Hardhat Network id, you might change it in the hardhat.config.js.
 // If you are using MetaMask, be sure to change the Network id to 1337.
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
@@ -57,6 +60,7 @@ export class Dapp extends React.Component {
       currentLotteryId: undefined,
       contractAddress: undefined,
       contractOwner: undefined,
+      lottery: {},
     };
 
     this.state = this.initialState;
@@ -88,15 +92,23 @@ export class Dapp extends React.Component {
 
     // If the token data or the user's balance hasn't loaded yet, we show
     // a loading component.
-    if (!this.state.currentLotteryId) {
+    if (!this.state.selectedAddress || !this.state.contractOwner) {
       return <Loading />;
     }
 
-    const { contractAddress, contractOwner, balance, selectedAddress } = {
+    const {
+      contractAddress,
+      contractOwner,
+      balance,
+      selectedAddress,
+      lottery,
+      minDrawingIncrement,
+      maxPlayersAllowed,
+    } = {
       ...this.state,
     };
     const isOwner =
-      selectedAddress.toUpperCase() == contractOwner.toUpperCase();
+      selectedAddress.toUpperCase() === contractOwner.toUpperCase();
     return (
       <div className="container p-4">
         <div className="row">
@@ -118,20 +130,31 @@ export class Dapp extends React.Component {
               Welcome <b>{isOwner ? "OWNER" : selectedAddress}</b>, you have{" "}
               <b>
                 {ethers.utils.commify(
-                  ethers.utils.formatUnits(this.state.balance).toString()
+                  ethers.utils.formatUnits(balance).toString()
                 )}{" "}
                 eth
               </b>{" "}
               to mint lottery tickets with.
             </p>
-            {isOwner && (
-              <p>
-                *As the owner, you can also create new lotteries and do other
-                shit.
-              </p>
-            )}
           </div>
         </div>
+        {isOwner && <OwnerOptions _initLottery={this._initLottery} />}
+        <hr />
+        <div>
+          <h3>Ground Rules</h3>
+          <p>
+            Minimum Buy In:{" "}
+            <b>
+              {ethers.utils.commify(
+                ethers.utils.formatUnits(minDrawingIncrement).toString()
+              )}{" "}
+              eth
+            </b>
+          </p>
+          <p>Max Degens Allowed: {maxPlayersAllowed.toString()}</p>
+        </div>
+        <hr />
+        {lottery.isActive && <ActiveLotteryDisplay lottery={lottery} />}
       </div>
     );
 
@@ -266,7 +289,7 @@ export class Dapp extends React.Component {
     // Fetching the token data and the user's balance are specific to this
     // sample project, but you can reuse the same initialization pattern.
     this._initializeEthers();
-    this._updateLotteryContractDetails();
+    // this._updateLotteryContractDetails();
     // this._getTokenData();
     this._startPollingData();
   }
@@ -292,12 +315,9 @@ export class Dapp extends React.Component {
   // don't need to poll it. If that's the case, you can just fetch it when you
   // initialize the app, as we do with the token data.
   _startPollingData() {
-    this._pollDataInterval = setInterval(
-      () => this._updateUserAndLotteryDetails(),
-      5000
-    );
+    this._pollDataInterval = setInterval(() => this._updateInfo(), 5000);
     // We run it once immediately so we don't have to wait for it
-    this._updateUserAndLotteryDetails();
+    this._updateInfo();
   }
 
   _stopPollingData() {
@@ -314,21 +334,52 @@ export class Dapp extends React.Component {
     this.setState({ tokenData: { name, symbol } });
   }
 
-  async _updateUserAndLotteryDetails() {
-    console.log("update balance");
-    const balance = await this._provider.getBalance(this.state.selectedAddress);
-    const currentLotteryId = await this._lottery.currentLotteryId();
-    this.setState({ balance, currentLotteryId: currentLotteryId });
+  async _updateInfo() {
+    console.log("_updateInfo");
+    this._updateUser();
+    this._updateLottery();
   }
 
-  async _updateLotteryContractDetails() {
-    console.log("_updateLotteryContractDetails");
+  async _updateUser() {
+    console.log("_updateUser");
+    const balance = await this._provider.getBalance(this.state.selectedAddress);
+    this.setState({ balance });
+  }
+
+  async _updateLottery() {
+    console.log("_updateLottery");
     const owner = await this._lottery.owner();
+    const minDrawingIncrement = await this._lottery.MIN_DRAWING_INCREMENT();
+    const maxPlayersAllowed = await this._lottery.maxPlayersAllowed();
+    const currentLotteryId = await this._lottery.currentLotteryId();
+    const prizeAmount = await this._lottery.prizeAmount();
+
+    const lottery = {
+      ...(await this._lottery.lotteries(currentLotteryId.toNumber())),
+    };
+
+    const numActivePlayers = await this._lottery.numActivePlayers();
+    let activePlayer;
+    for (const ind = 0; ind < numActivePlayers; ind++) {
+      activePlayer = await this._lottery.numActivePlayers(ind);
+      console.log(activePlayer);
+    }
+
+    this.setState({ currentLotteryId: currentLotteryId, lottery });
     this.setState({
       contractAddress: contractAddress.Lottery,
       contractOwner: owner,
+      minDrawingIncrement,
+      maxPlayersAllowed,
     });
   }
+
+  _initLottery = async () => {
+    console.log("init lottery");
+    const unixtimeNow = Math.floor(Date.now() / 1000);
+    await this._lottery.initLottery(unixtimeNow, 7);
+    this._updateInfo();
+  };
 
   // This method sends an ethereum transaction to transfer tokens.
   // While this action is specific to this application, it illustrates how to

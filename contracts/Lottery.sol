@@ -14,6 +14,7 @@ contract Lottery is Ownable {
 
   // State Variables
   struct LotteryStruct {
+    uint256 lotteryId;
     uint256 startTime;
     uint256 endTime;
     bool isActive;
@@ -149,6 +150,7 @@ contract Lottery is Ownable {
     }
     uint256 endTime = startTime.add(numDays * 1 days);
     lotteries[currentLotteryId] = LotteryStruct({
+      lotteryId: currentLotteryId,
       startTime: startTime,
       endTime: endTime,
       isActive: true
