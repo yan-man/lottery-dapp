@@ -18,6 +18,7 @@ contract Lottery is Ownable {
     uint256 startTime;
     uint256 endTime;
     bool isActive;
+    bool isCompleted;
   }
   struct TicketDistributionStruct {
     address playerAddress;
@@ -173,7 +174,8 @@ contract Lottery is Ownable {
       lotteryId: currentLotteryId,
       startTime: startTime,
       endTime: endTime,
-      isActive: true
+      isActive: true,
+      isCompleted: false
     });
     numLotteries = numLotteries.add(1);
     emit NewLottery(msg.sender, startTime, endTime);
@@ -253,11 +255,10 @@ contract Lottery is Ownable {
     */
 
     findWinningAddress(winningTicket.winningTicketIndex);
-    address winningAddress = winningTicket.addr;
+    designateWinnerAndDepositPrize(winningTicket.addr);
 
-    designateWinnerAndDepositPrize(winningAddress);
-    resetLottery();
-    emit triggerLotteryWinningAddress(currentLotteryId, winningAddress);
+    emit triggerLotteryWinningAddress(currentLotteryId, winningTicket.addr);
+    // resetLottery();
   }
 
   /**
@@ -337,21 +338,20 @@ contract Lottery is Ownable {
     - search for  which user has won
     - 
     */
-    winningTicket.addr = address(0);
 
     if (numActivePlayers == 1) {
       winningTicket.addr = ticketDistribution[0].playerAddress;
+    } else {
+      // do binary search on ticketDistribution array to find winner
+
+      uint256 winningPlayerIndex = binarySearch(
+        0,
+        numActivePlayers - 1,
+        _winningTicketIndex
+      );
+      require(winningPlayerIndex < numActivePlayers);
+      winningTicket.addr = ticketDistribution[winningPlayerIndex].playerAddress;
     }
-
-    // do binary search on ticketDistribution array to find winner
-
-    uint256 winningPlayerIndex = binarySearch(
-      0,
-      numActivePlayers - 1,
-      _winningTicketIndex
-    );
-    require(winningPlayerIndex < numActivePlayers);
-    winningTicket.addr = ticketDistribution[winningPlayerIndex].playerAddress;
   }
 
   function binarySearch(
@@ -429,6 +429,7 @@ contract Lottery is Ownable {
     numTotalTickets = 0;
     numActivePlayers = 0;
     lotteries[currentLotteryId].isActive = false;
+    lotteries[currentLotteryId].isCompleted = true;
     currentLotteryId = currentLotteryId.add(1);
   }
 

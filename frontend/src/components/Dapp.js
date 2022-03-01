@@ -21,6 +21,7 @@ import { NoTokensMessage } from "./NoTokensMessage";
 
 import OwnerOptions from "./OwnerOptions";
 import ActiveLotteryDisplay from "./ActiveLotteryDisplay";
+import OpenLotteryDisplay from "./OpenLotteryDisplay";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js.
 // If you are using MetaMask, be sure to change the Network id to 1337.
@@ -155,6 +156,14 @@ export class Dapp extends React.Component {
             _handleMintLotteryTickets={this._mintLotteryTickets}
           />
         )}
+        {lottery.numTotalTickets > 0 &&
+          !lottery.isCompleted &&
+          !lottery.isActive && (
+            <OpenLotteryDisplay
+              selectedAddress={selectedAddress}
+              lottery={lottery}
+            />
+          )}
       </div>
     );
 
@@ -366,6 +375,16 @@ export class Dapp extends React.Component {
       playerAddress = await this._lottery.listOfPlayers(ind);
       activePlayers.push(playerAddress);
     }
+    const winningTicket = await this._lottery.winningTicket();
+    console.log(winningTicket.winningTicketIndex.toString());
+    console.log(winningTicket.addr.toString());
+
+    const pendingWithdrawal = await this._lottery.pendingWithdrawals(
+      0,
+      winningTicket.addr
+    );
+    console.log(pendingWithdrawal.toString());
+
     const newState = {
       ...lottery,
       id: currentLotteryId,
@@ -380,7 +399,6 @@ export class Dapp extends React.Component {
       isUserActive: await this._lottery.players(this.state.selectedAddress),
       numTickets: await this._lottery.tickets(this.state.selectedAddress),
     };
-    console.log(newState);
     this.setState({
       lottery: newState,
     });
@@ -389,16 +407,16 @@ export class Dapp extends React.Component {
   _initLottery = async () => {
     console.log("init lottery");
     const unixtimeNow = Math.floor(Date.now() / 1000);
-    await this._lottery.initLottery(unixtimeNow, 7);
+    await this._lottery.initLottery(unixtimeNow, 1);
     this._updateInfo();
   };
 
   _triggerLotteryDrawing = async () => {
     console.log("_triggerLotteryDrawing");
     await this._lottery.triggerLotteryDrawing();
-    await this._lottery.triggerDepositWinnings();
-    const winningTicket = await this._lottery.winningTicket();
-    console.log(winningTicket);
+    const tx = await this._lottery.triggerDepositWinnings();
+    const receipt = await tx.wait();
+    console.log(receipt.events[0].args);
     this._updateInfo();
   };
 
