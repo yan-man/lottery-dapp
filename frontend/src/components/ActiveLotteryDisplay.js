@@ -92,6 +92,44 @@ class ActiveLotteryDisplay extends Component {
     const { lottery } = { ...this.props };
     return (
       <React.Fragment>
+        <Col className="col-6">
+          <div className="col-12">
+            <Form>
+              <Form.Group className="mb-3" controlId="formBasicEmail">
+                <Form.Label>
+                  How much <b>eth</b> do you want to convert into lottery
+                  tickets?
+                </Form.Label>
+                <Form.Control
+                  type="number"
+                  value={this.state.value}
+                  onChange={this._onChange}
+                  placeholder={`Min: ${ethers.utils.commify(
+                    ethers.utils
+                      .formatUnits(lottery.minDrawingIncrement)
+                      .toString()
+                  )} eth`}
+                />
+                <Form.Text className="text-muted">
+                  You will get odds proportional to the amount of tickets you
+                  mint
+                </Form.Text>
+              </Form.Group>
+            </Form>
+          </div>
+          <div className="p-5 d-flex justify-content-center">
+            <Button
+              variant="primary"
+              type="submit"
+              onClick={this._handleMintLotteryTickets}
+              className="btn-success px-5 py-2"
+              type="button"
+              style={{ fontSize: "20px" }}
+            >
+              Mint
+            </Button>
+          </div>
+        </Col>
         <div className="row">
           <div className="col-12">
             <h3>Active Lottery </h3>
@@ -126,39 +164,6 @@ class ActiveLotteryDisplay extends Component {
                   .toLocaleString("en")}`}</>
               )}
             </p>
-          </div>
-          <div className="col-12">
-            <Form>
-              <Form.Group className="mb-3" controlId="formBasicEmail">
-                <Form.Label>
-                  How much <b>eth</b> do you want to convert into lottery
-                  tickets?
-                </Form.Label>
-                <Form.Control
-                  type="number"
-                  value={this.state.value}
-                  onChange={this._onChange}
-                  placeholder={`Min: ${ethers.utils.commify(
-                    ethers.utils
-                      .formatUnits(lottery.minDrawingIncrement)
-                      .toString()
-                  )} eth`}
-                />
-                <Form.Text className="text-muted">
-                  You will get odds proportional to the amount of tickets you
-                  mint
-                </Form.Text>
-              </Form.Group>
-              <Button
-                variant="primary"
-                type="submit"
-                onClick={this._handleMintLotteryTickets}
-                className="btn-success"
-                type="button"
-              >
-                Mint
-              </Button>
-            </Form>
           </div>
 
           {lottery.isUserActive && (

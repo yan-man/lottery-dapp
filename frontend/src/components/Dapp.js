@@ -106,7 +106,7 @@ export class Dapp extends React.Component {
       <>
         <Header />
         <main>
-          <div className="container" style={{ ["padding-top"]: "60px" }}>
+          <div className="container" style={{ paddingTop: "60px" }}>
             <div className="container p-4">
               <div className="row">
                 <div className="col-12">
@@ -138,9 +138,10 @@ export class Dapp extends React.Component {
                     .formatUnits(lottery.minDrawingIncrement)
                     .toString()
                 )}
-                maxPlayersAllowed={lottery.maxPlayersAllowed.toString()}
+                maxPlayersAllowed={lottery.maxPlayersAllowed
+                  .toNumber()
+                  .toLocaleString("en")}
               />
-              <hr />
               {lottery.isActive && (
                 <ActiveLotteryDisplay
                   selectedAddress={selectedAddress}

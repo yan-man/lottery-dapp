@@ -2,9 +2,9 @@ import React from "react";
 
 const Footer = (props) => {
   return (
-    <footer class="footer mt-auto py-3 bg-light">
-      <div class="container">
-        <span class="text-muted">
+    <footer className="footer mt-auto py-3 bg-light">
+      <div className="container">
+        <span className="text-muted">
           <div>Me: {props.myAddress}</div>
           <div>Contract Owner: {props.owner}</div>
         </span>
