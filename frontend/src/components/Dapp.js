@@ -83,6 +83,7 @@ export class Dapp extends React.Component {
     // Note that we pass it a callback that is going to be called when the user
     // clicks a button. This callback just calls the _connectWallet method.
     if (!this.state.selectedAddress) {
+      // this._connectWallet();
       return (
         <ConnectWallet
           connectWallet={() => this._connectWallet()}
@@ -105,16 +106,15 @@ export class Dapp extends React.Component {
     return (
       <>
         <Header />
-        <main>
+        <main className="container">
           <div className="container" style={{ paddingTop: "60px" }}>
             <div className="container p-4">
-              <div className="row">
+              {/* <div className="row">
                 <div className="col-12">
-                  <h1>The Global DEGENtralized Lottery</h1>
+                  <h1>DEGENtralized Lottery</h1>
                 </div>
-              </div>
+              </div> */}
 
-              <hr />
               <div className="row">
                 <div className="col-12">
                   <p>

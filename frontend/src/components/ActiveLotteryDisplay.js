@@ -92,14 +92,22 @@ class ActiveLotteryDisplay extends Component {
     const { lottery } = { ...this.props };
     return (
       <React.Fragment>
-        <Col className="col-6">
+        <Col className="col-8">
           <div className="col-12">
             <Form>
               <Form.Group className="mb-3" controlId="formBasicEmail">
                 <Form.Label>
-                  How much <b>eth</b> do you want to convert into lottery
-                  tickets?
+                  <h2>
+                    How much <b>eth</b> do you want to mint?
+                  </h2>
+                  <p>
+                    <Form.Text className="text-muted">
+                      You will get odds proportional to the amount of tickets
+                      you mint.
+                    </Form.Text>
+                  </p>
                 </Form.Label>
+
                 <Form.Control
                   type="number"
                   value={this.state.value}
@@ -111,8 +119,17 @@ class ActiveLotteryDisplay extends Component {
                   )} eth`}
                 />
                 <Form.Text className="text-muted">
-                  You will get odds proportional to the amount of tickets you
-                  mint
+                  {this.state.value !== 0 &&
+                    this.state.value !== "" &&
+                    this.state.showText && (
+                      <>
+                        You can mint{" "}
+                        {Number(this.state.numMoreTickets).toLocaleString("en")}{" "}
+                        {lottery.isUserActive && <>more </>}
+                        tickets. You would have a {this.state.odds}% chance of
+                        winning!
+                      </>
+                    )}
                 </Form.Text>
               </Form.Group>
             </Form>
@@ -129,15 +146,40 @@ class ActiveLotteryDisplay extends Component {
               Mint
             </Button>
           </div>
+          <div className="d-flex ">
+            {lottery.isUserActive && (
+              <>
+                <h4 className="justify-content-center">
+                  You currently have a {this.state.currentOdds}% chance to win.
+                </h4>
+              </>
+            )}
+          </div>
+          <div>
+            <h4>
+              Total Tickets Minted:{" "}
+              {lottery.numTotalTickets.toNumber().toLocaleString("en")}
+            </h4>
+            <p>
+              {`Mine: ${
+                lottery.isUserActive
+                  ? lottery.numTickets.toNumber().toLocaleString("en")
+                  : 0
+              }`}
+            </p>
+          </div>
         </Col>
         <div className="row">
           <div className="col-12">
             <h3>Active Lottery </h3>
             <p>ID#{lottery.lotteryId.toString()}</p>
             <p>
-              Start Time: {this._timeConverter(lottery.startTime.toString())}
+              Start of Minting:{" "}
+              {this._timeConverter(lottery.startTime.toString())}
             </p>
-            <p>End Time: {this._timeConverter(lottery.endTime.toString())}</p>
+            <p>
+              End of Minting: {this._timeConverter(lottery.endTime.toString())}
+            </p>
           </div>
         </div>
         <div className="row">
@@ -149,45 +191,9 @@ class ActiveLotteryDisplay extends Component {
                   {lottery.numActivePlayers.toNumber().toLocaleString("en")}{" "}
                 </h4>
               </Col>
-              <Col>
-                <h4>
-                  Total Tickets Minted:{" "}
-                  {lottery.numTotalTickets.toNumber().toLocaleString("en")}
-                </h4>
-              </Col>
             </Row>
-
-            <p>
-              {lottery.isUserActive && (
-                <>{`Mine: ${lottery.numTickets
-                  .toNumber()
-                  .toLocaleString("en")}`}</>
-              )}
-            </p>
           </div>
 
-          {lottery.isUserActive && (
-            <>
-              <h3>
-                You currently have a {this.state.currentOdds}% chance to win.
-              </h3>
-            </>
-          )}
-
-          <h2>
-            {this.state.value !== 0 &&
-              this.state.value !== "" &&
-              this.state.showText && (
-                <>
-                  You can mint{" "}
-                  {Number(this.state.numMoreTickets).toLocaleString("en")}{" "}
-                  {lottery.isUserActive && <>more </>}
-                  tickets. You would have a {this.state.odds}% chance of
-                  winning!
-                </>
-              )}
-          </h2>
-          <hr />
           <div>
             <h2>Current Players</h2>
             <ul>
