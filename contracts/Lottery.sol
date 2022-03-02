@@ -75,6 +75,9 @@ contract Lottery is Ownable {
     _;
   }
   modifier isLotteryMintingCompleted() {
+    // console.log(lotteries[currentLotteryId].isActive);
+    // console.log(block.timestamp);
+    // console.log(lotteries[currentLotteryId].endTime);
     require(
       (lotteries[currentLotteryId].isActive == true &&
         lotteries[currentLotteryId].endTime < block.timestamp) ||
@@ -163,7 +166,7 @@ contract Lottery is Ownable {
     external
     isNewLotteryValid(startTime)
   {
-    console.log("initLottery");
+    // console.log("initLottery");
     /**
      - calculate end date
      - save new lottery
@@ -193,7 +196,7 @@ contract Lottery is Ownable {
    *
    */
   function mintLotteryTickets() public payable isNewPlayerValid {
-    console.log("mintLotteryTickets");
+    // console.log("mintLotteryTickets");
     /**
    * - must be within time period, between start/end dates
        - user can submit multiple independent entries; ie buy different "tickets"
@@ -227,7 +230,7 @@ contract Lottery is Ownable {
    *  - modifier - check that lottery end date reached
    */
   function triggerLotteryDrawing() public isLotteryMintingCompleted onlyOwner {
-    console.log("triggerLotteryDrawing");
+    // console.log("triggerLotteryDrawing");
     /*
     - calculate each player's odds
     - trigger lottery drawing with random numbers
@@ -250,7 +253,7 @@ contract Lottery is Ownable {
   }
 
   function triggerDepositWinnings() public {
-    console.log("triggerDepositWinnings");
+    // console.log("triggerDepositWinnings");
     /*
     - calculate each player's odds
     - trigger lottery drawing with random numbers
@@ -292,7 +295,7 @@ contract Lottery is Ownable {
    update state var for player odds 
    */
   function playerTicketDistribution() private {
-    console.log("playerTicketDistribution");
+    // console.log("playerTicketDistribution");
 
     /**
     Each block of MIN_DRAWING represents one lottery ticket
@@ -336,7 +339,7 @@ contract Lottery is Ownable {
    * private internal function, only called during lottery triggered
    */
   function performRandomizedDrawing() private view returns (uint256) {
-    console.log("performRandomizedDrawing");
+    // console.log("performRandomizedDrawing");
     /**
    * take total # tickets
     generate random number between 0, # lottery tickets
@@ -357,7 +360,7 @@ contract Lottery is Ownable {
    * private internal function, only called during lottery triggered
    */
   function findWinningAddress(uint256 _winningTicketIndex) public {
-    console.log("findWinningAddress");
+    // console.log("findWinningAddress");
     /*
     - based on given winning index id:
     - set _winningTicketIndex state
@@ -404,13 +407,13 @@ contract Lottery is Ownable {
       ticketDistribution[searchIndex].startIndex > _ticketIndexToFind
     ) {
       // go to left subarray
-      console.log("go left");
+      // console.log("go left");
       _rightIndex = searchIndex.sub(_leftIndex);
 
       return binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
     } else if (ticketDistribution[searchIndex].endIndex < _ticketIndexToFind) {
       // go to right subarray
-      console.log("go right");
+      // console.log("go right");
       _leftIndex = searchIndex.add(_leftIndex).add(1);
       return binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
     }
@@ -423,7 +426,7 @@ contract Lottery is Ownable {
    * private internal function, only called during lottery triggered
    */
   function resetLottery() private {
-    console.log("getLottery");
+    // console.log("getLottery");
     /*
     - reset winningTicketIndex
     - players delete
@@ -450,7 +453,7 @@ contract Lottery is Ownable {
    - check winner is calling this
    */
   function withdraw(uint256 lotteryId) external payable {
-    console.log("withdraw");
+    // console.log("withdraw");
     /*
     - send funds to user
     - update pending withdrawals var
