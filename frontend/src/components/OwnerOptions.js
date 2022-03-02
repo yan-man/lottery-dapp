@@ -25,9 +25,10 @@ class OwnerOptions extends Component {
   render() {
     return (
       <React.Fragment>
-        <div>
+        <div className="col-8">
           <p>
-            *As the owner, you can also create new lotteries and do other shit.
+            Because you're the owner, you can also create new lotteries and do
+            other shit.
           </p>
           <p>
             {!this.props.lottery.isCreated && (
@@ -53,15 +54,17 @@ class OwnerOptions extends Component {
             )}
           </p>
           <p>
-            {!this.props.lottery.isActive && this.props.lottery.isCreated && (
-              <Button
-                onClick={this._handleTriggerLotteryDrawing}
-                type="button"
-                className="btn btn-warning"
-              >
-                Start Lottery Drawing
-              </Button>
-            )}
+            {!this.props.lottery.isActive &&
+              this.props.lottery.isCreated &&
+              !this.props.lottery.isCompleted && (
+                <Button
+                  onClick={this._handleTriggerLotteryDrawing}
+                  type="button"
+                  className="btn btn-warning"
+                >
+                  Start Lottery Drawing
+                </Button>
+              )}
           </p>
         </div>
       </React.Fragment>

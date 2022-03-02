@@ -106,61 +106,50 @@ export class Dapp extends React.Component {
     return (
       <>
         <Header />
-        <main className="container">
-          <div className="container" style={{ paddingTop: "60px" }}>
-            <div className="container p-4">
-              {/* <div className="row">
-                <div className="col-12">
-                  <h1>DEGENtralized Lottery</h1>
-                </div>
-              </div> */}
-
-              <div className="row">
-                <div className="col-12">
-                  <p>
-                    Welcome <b>{isOwner ? "OWNER" : selectedAddress}</b>, you
-                    have{" "}
-                    <b>
-                      {/* TASK: create a utility function for formatting wei into ethers
-                       */}
-                      {ethers.utils.commify(
-                        ethers.utils.formatUnits(balance).toString()
-                      )}{" "}
-                      eth
-                    </b>{" "}
-                    to mint lottery tickets with.
-                  </p>
-                </div>
+        <main className="container h-100" style={{ paddingTop: "80px" }}>
+          <div className="container ">
+            <div className="row">
+              <div className="col-12 ">
+                <p>
+                  Welcome <b>{isOwner ? "OWNER" : selectedAddress}</b>, you have{" "}
+                  <b>
+                    {/* TASK: create a utility function for formatting wei into ethers
+                     */}
+                    {ethers.utils.commify(
+                      ethers.utils.formatUnits(balance).toString()
+                    )}{" "}
+                    eth
+                  </b>{" "}
+                  to mint lottery tickets with.
+                </p>
               </div>
-              <Rules
-                minDrawingIncrement={ethers.utils.commify(
-                  ethers.utils
-                    .formatUnits(lottery.minDrawingIncrement)
-                    .toString()
-                )}
-                maxPlayersAllowed={lottery.maxPlayersAllowed
-                  .toNumber()
-                  .toLocaleString("en")}
-              />
-              {lottery.isActive && (
-                <ActiveLotteryDisplay
-                  selectedAddress={selectedAddress}
-                  lottery={lottery}
-                  _handleMintLotteryTickets={this._mintLotteryTickets}
-                />
-              )}
-              {!lottery.isActive && lottery.isCreated && (
-                <PreviousLotteryDisplay
-                  selectedAddress={selectedAddress}
-                  lottery={lottery}
-                />
-              )}
             </div>
             {isOwner && (
               <OwnerOptions
                 _initLottery={this._initLottery}
                 _triggerLotteryDrawing={this._triggerLotteryDrawing}
                 _triggerSetLotteryInactive={this._triggerSetLotteryInactive}
+                lottery={lottery}
+              />
+            )}
+            <Rules
+              minDrawingIncrement={ethers.utils.commify(
+                ethers.utils.formatUnits(lottery.minDrawingIncrement).toString()
+              )}
+              maxPlayersAllowed={lottery.maxPlayersAllowed
+                .toNumber()
+                .toLocaleString("en")}
+            />
+            {lottery.isActive && (
+              <ActiveLotteryDisplay
+                selectedAddress={selectedAddress}
+                lottery={lottery}
+                _handleMintLotteryTickets={this._mintLotteryTickets}
+              />
+            )}
+            {!lottery.isActive && lottery.isCreated && (
+              <PreviousLotteryDisplay
+                selectedAddress={selectedAddress}
                 lottery={lottery}
               />
             )}
@@ -327,7 +316,7 @@ export class Dapp extends React.Component {
   // don't need to poll it. If that's the case, you can just fetch it when you
   // initialize the app, as we do with the token data.
   _startPollingData() {
-    this._pollDataInterval = setInterval(() => this._updateInfo(), 5000);
+    this._pollDataInterval = setInterval(() => this._updateInfo(), 3000);
     // We run it once immediately so we don't have to wait for it
     this._updateInfo();
   }

@@ -18,80 +18,13 @@ class ActiveLotteryDisplay extends Component {
       showText: true,
     };
     this.state = this.initialState;
+    this._startPollingData();
   }
 
-  _onChange = (e) => {
-    const convertedNumTickets = this._convertToNumTickets(e.target.value);
-    // console.log(convertedNumTickets);
-    this.setState({
-      value: e.target.value,
-      numMoreTickets: convertedNumTickets,
-      odds: this._calculateOdds(Number(convertedNumTickets)),
-      currentOdds: this._calculateInitialOdds(
-        this.props.lottery.numTickets.toNumber()
-      ),
-      showText: true,
-    });
-  };
-  _timeConverter = (UNIX_timestamp) => {
-    const a = new Date(UNIX_timestamp * 1000);
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const year = a.getFullYear();
-    const month = months[a.getMonth()];
-    const date = a.getDate();
-    const hour = a.getHours();
-    const min = a.getMinutes();
-    const sec = a.getSeconds();
-    const time =
-      date + " " + month + " " + year + " " + hour + ":" + min + ":" + sec;
-    return time;
-  };
-  _calculateInitialOdds = (numTickets) => {
-    if (numTickets === 0) return 0;
-    const { numTotalTickets } = this.props.lottery;
-    let odds = ((numTickets / numTotalTickets.toNumber()) * 100).toFixed(2);
-    return odds;
-  };
-  _calculateOdds = (numNewTickets) => {
-    if (numNewTickets === 0) return 0;
-    const { numTotalTickets, numTickets } = this.props.lottery;
-    let odds = (
-      ((numNewTickets + numTickets.toNumber()) /
-        (numTotalTickets.toNumber() + numNewTickets)) *
-      100
-    ).toFixed(2);
-    return odds;
-  };
-  _handleMintLotteryTickets = () => {
-    this.props._handleMintLotteryTickets(this.state.value) &&
-      this.setState({ showText: false });
-  };
-  _convertToNumTickets = (value) => {
-    if (value !== "" && value !== 0) {
-      return ethers.utils
-        .parseUnits(value)
-        .div(this.props.lottery.minDrawingIncrement)
-        .toNumber();
-    }
-    return 0;
-  };
   render() {
     const { lottery } = { ...this.props };
     return (
-      <React.Fragment>
+      <React.Fragment className="h-100">
         <Col className="col-8">
           <div className="col-12">
             <Form>
@@ -161,7 +94,7 @@ class ActiveLotteryDisplay extends Component {
               {lottery.numTotalTickets.toNumber().toLocaleString("en")}
             </h4>
             <p>
-              {`Mine: ${
+              {`My Tickets: ${
                 lottery.isUserActive
                   ? lottery.numTickets.toNumber().toLocaleString("en")
                   : 0
@@ -223,6 +156,92 @@ class ActiveLotteryDisplay extends Component {
       </React.Fragment>
     );
   }
+  _onChange = (e) => {
+    const convertedNumTickets = this._convertToNumTickets(e.target.value);
+    this.setState({
+      value: e.target.value,
+      numMoreTickets: convertedNumTickets,
+      odds: this._calculateOdds(Number(convertedNumTickets)),
+      /* TASK: DRY currentOdds this into separate function, 
+      gets called a lot - calculateCurrentOdds
+      recalculate it more frequently
+      maybe move it to being a passed prop
+       */
+      currentOdds: this._calculateInitialOdds(
+        this.props.lottery.numTickets.toNumber()
+      ),
+      showText: true,
+    });
+  };
+  _startPollingData() {
+    this._pollDataInterval = setInterval(() => {
+      this.setState({
+        currentOdds: this._calculateInitialOdds(
+          this.props.lottery.numTickets.toNumber()
+        ),
+        showText: this.state.value !== "",
+      });
+    }, 3000);
+  }
+  _timeConverter = (UNIX_timestamp) => {
+    const a = new Date(UNIX_timestamp * 1000);
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const year = a.getFullYear();
+    const month = months[a.getMonth()];
+    const date = a.getDate();
+    const hour = a.getHours();
+    const min = a.getMinutes();
+    const sec = a.getSeconds();
+    const time =
+      date + " " + month + " " + year + " " + hour + ":" + min + ":" + sec;
+    return time;
+  };
+  _calculateInitialOdds = (numTickets) => {
+    if (numTickets === 0) return 0;
+    const { numTotalTickets } = this.props.lottery;
+    let odds = ((numTickets / numTotalTickets.toNumber()) * 100).toFixed(2);
+    return odds;
+  };
+  _calculateOdds = (numNewTickets) => {
+    if (numNewTickets === 0) return 0;
+    const { numTotalTickets, numTickets } = this.props.lottery;
+    let odds = (
+      ((numNewTickets + numTickets.toNumber()) /
+        (numTotalTickets.toNumber() + numNewTickets)) *
+      100
+    ).toFixed(2);
+    return odds;
+  };
+  _handleMintLotteryTickets = () => {
+    this.props._handleMintLotteryTickets(this.state.value) &&
+      this.setState({
+        currentOdds: this._calculateInitialOdds(
+          this.props.lottery.numTickets.toNumber()
+        ),
+      });
+  };
+  _convertToNumTickets = (value) => {
+    if (value !== "" && value !== 0) {
+      return ethers.utils
+        .parseUnits(value)
+        .div(this.props.lottery.minDrawingIncrement)
+        .toNumber();
+    }
+    return 0;
+  };
 }
 
 export default ActiveLotteryDisplay;

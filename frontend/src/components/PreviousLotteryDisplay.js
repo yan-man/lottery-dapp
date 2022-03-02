@@ -161,7 +161,7 @@ class PreviousLotteryDisplay extends Component {
 
           <hr />
           <div>
-            {lottery.isActive && (
+            {lottery.isCreated && !this.props.lottery.isCompleted && (
               <>
                 <h2>Current Players</h2>
                 <ul>

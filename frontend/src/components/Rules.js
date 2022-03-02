@@ -5,10 +5,9 @@ import { Card, ListGroup, ListGroupItem } from "react-bootstrap";
 const Rules = (props) => {
   return (
     <Card style={{ width: "18rem", float: "right" }}>
-      <Card.Img variant="top" src="holder.js/100px180?text=Image cap" />
       <Card.Body>
         <Card.Title>Ground Rules</Card.Title>
-        <Card.Text>Even degens got rules.</Card.Text>
+        <Card.Text>Even DEGENS got rules.</Card.Text>
       </Card.Body>
       <ListGroup className="list-group-flush">
         <ListGroupItem>
@@ -16,7 +15,7 @@ const Rules = (props) => {
             <li>
               Ticket Floor: <b>{props.minDrawingIncrement} eth</b>
             </li>
-            <li>Max Degens Allowed Per Lottery: {props.maxPlayersAllowed}</li>
+            <li>Max DEGENS Allowed Per Lottery: {props.maxPlayersAllowed}</li>
           </ul>
         </ListGroupItem>
       </ListGroup>
