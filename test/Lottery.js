@@ -261,8 +261,9 @@ describe("Lottery contract", function () {
           );
         });
         describe("...After more lottery tickets for player1 are minted", function () {
-          /// TASK: combined into a single array or obj; maybe combine with global player var
-          // let expectedNumTicketsPlayer1, numTicketsPlayer1, numTicketsPlayer2;
+          /* TASK: combined into a single array or obj; maybe combine with global player var
+          let expectedNumTicketsPlayer1, numTicketsPlayer1, numTicketsPlayer2;
+          */
           beforeEach(async function () {
             const mintValue = ethers.utils.parseEther("0.1"); // eth
             const tx = await LotteryContract.connect(
@@ -297,11 +298,6 @@ describe("Lottery contract", function () {
 
             await LotteryContract.triggerLotteryDrawing();
             const winningTicket = await LotteryContract.winningTicket();
-
-            /* TASK: after triggering lottery drawing, get winning ticket details
-            replicate search here and confirm winning user address matches winning address found by contract
-            30min 
-            */
 
             let ticketDistribution = await Promise.all(
               players.map(async (player, ind) => {
