@@ -144,9 +144,6 @@ describe("Lottery contract", function () {
     });
 
     describe("...After player1 mints tickets", function () {
-      /// TASK
-      /// refactor players to be one large array with all players, rather than each being coded as separate variable
-      /// 30 min
       const players = [];
       let expectedNumTotalTicketsMinted;
       beforeEach(async function () {
