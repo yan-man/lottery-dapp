@@ -40,6 +40,10 @@ class OwnerOptions extends Component {
                 Create a new lottery
               </Button>
             )}
+
+            {this.props.lottery.isCompleted && (
+              <h1>Redeploy the Contract to Start Over</h1>
+            )}
           </p>
           <p>
             {this.props.lottery.isActive && (
@@ -49,7 +53,7 @@ class OwnerOptions extends Component {
                 className="btn btn-danger"
               >
                 {/* TASK: better button name, confusing. Maybe like close minting period? something */}
-                [Emergency] End Minting Window
+                [Emergency] End Minting Period
               </Button>
             )}
           </p>

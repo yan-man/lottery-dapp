@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 class ActiveLotteryDisplay extends Component {
   constructor(props) {
@@ -16,6 +16,7 @@ class ActiveLotteryDisplay extends Component {
         props.lottery.numTickets.toNumber()
       ),
       showText: true,
+      timeRemaining: 0,
     };
     this.state = this.initialState;
     this._startPollingData();
@@ -67,6 +68,15 @@ class ActiveLotteryDisplay extends Component {
               </Form.Group>
             </Form>
           </div>
+          <div className="py-2 d-flex justify-content-center">
+            <p className="">
+              Minting Period Closes In:{" "}
+              <span className="display-4 text-muted">
+                {this.state.timeRemaining}
+              </span>
+              seconds
+            </p>
+          </div>
           <div className="p-5 d-flex justify-content-center">
             <Button
               variant="primary"
@@ -104,15 +114,15 @@ class ActiveLotteryDisplay extends Component {
         </Col>
         <div className="row">
           <div className="col-12">
-            <h3>Active Lottery </h3>
-            <p>ID#{lottery.lotteryId.toString()}</p>
+            {/* <h3>Active Lottery </h3> */}
+            {/* <p>ID#{lottery.lotteryId.toString()}</p>
             <p>
               Start of Minting:{" "}
               {this._timeConverter(lottery.startTime.toString())}
             </p>
             <p>
               End of Minting: {this._timeConverter(lottery.endTime.toString())}
-            </p>
+            </p> */}
           </div>
         </div>
         <div className="row">
@@ -180,8 +190,12 @@ class ActiveLotteryDisplay extends Component {
           this.props.lottery.numTickets.toNumber()
         ),
         showText: this.state.value !== "",
+        timeRemaining: this.props.lottery.endTime
+          .sub(BigNumber.from(Math.floor(Date.now() / 1000)))
+          .toNumber()
+          .toLocaleString("en"),
       });
-    }, 3000);
+    }, 1000);
   }
   _timeConverter = (UNIX_timestamp) => {
     const a = new Date(UNIX_timestamp * 1000);
