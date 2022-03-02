@@ -204,7 +204,6 @@ describe("Lottery contract", function () {
         );
       });
       describe("...After player2 mints tickets", function () {
-        /// TASK: combine into a single array/obj; global player obj
         beforeEach(async function () {
           const mintValue = ethers.utils.parseEther("0.5");
           const player2 = addrs[1];
@@ -261,9 +260,6 @@ describe("Lottery contract", function () {
           );
         });
         describe("...After more lottery tickets for player1 are minted", function () {
-          /* TASK: combined into a single array or obj; maybe combine with global player var
-          let expectedNumTicketsPlayer1, numTicketsPlayer1, numTicketsPlayer2;
-          */
           beforeEach(async function () {
             const mintValue = ethers.utils.parseEther("0.1"); // eth
             const tx = await LotteryContract.connect(
