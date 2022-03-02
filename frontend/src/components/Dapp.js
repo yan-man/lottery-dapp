@@ -1,7 +1,7 @@
 import React from "react";
 
 // We'll use ethers to interact with the Ethereum network and our contract
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
@@ -21,7 +21,11 @@ import { NoTokensMessage } from "./NoTokensMessage";
 
 import OwnerOptions from "./OwnerOptions";
 import ActiveLotteryDisplay from "./ActiveLotteryDisplay";
-import OpenLotteryDisplay from "./OpenLotteryDisplay";
+import PreviousLotteryDisplay from "./PreviousLotteryDisplay";
+
+import Header from "./Header";
+import Footer from "./Footer";
+import Rules from "./Rules";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js.
 // If you are using MetaMask, be sure to change the Network id to 1337.
@@ -99,72 +103,70 @@ export class Dapp extends React.Component {
     const isOwner =
       selectedAddress.toUpperCase() === lottery.owner.toUpperCase();
     return (
-      <div className="container p-4">
-        <div className="row">
-          <div className="col-12">
-            <h1>The Global DEGENtralized Lottery</h1>
+      <>
+        <Header />
+        <main>
+          <div className="container" style={{ ["padding-top"]: "60px" }}>
+            <div className="container p-4">
+              <div className="row">
+                <div className="col-12">
+                  <h1>The Global DEGENtralized Lottery</h1>
+                </div>
+              </div>
+
+              <hr />
+              <div className="row">
+                <div className="col-12">
+                  <p>
+                    Welcome <b>{isOwner ? "OWNER" : selectedAddress}</b>, you
+                    have{" "}
+                    <b>
+                      {/* TASK: create a utility function for formatting wei into ethers
+                       */}
+                      {ethers.utils.commify(
+                        ethers.utils.formatUnits(balance).toString()
+                      )}{" "}
+                      eth
+                    </b>{" "}
+                    to mint lottery tickets with.
+                  </p>
+                </div>
+              </div>
+              <Rules
+                minDrawingIncrement={ethers.utils.commify(
+                  ethers.utils
+                    .formatUnits(lottery.minDrawingIncrement)
+                    .toString()
+                )}
+                maxPlayersAllowed={lottery.maxPlayersAllowed.toString()}
+              />
+              <hr />
+              {lottery.isActive && (
+                <ActiveLotteryDisplay
+                  selectedAddress={selectedAddress}
+                  lottery={lottery}
+                  _handleMintLotteryTickets={this._mintLotteryTickets}
+                />
+              )}
+              {!lottery.isActive && lottery.isCreated && (
+                <PreviousLotteryDisplay
+                  selectedAddress={selectedAddress}
+                  lottery={lottery}
+                />
+              )}
+            </div>
+            {isOwner && (
+              <OwnerOptions
+                _initLottery={this._initLottery}
+                _triggerLotteryDrawing={this._triggerLotteryDrawing}
+                _triggerSetLotteryInactive={this._triggerSetLotteryInactive}
+                lottery={lottery}
+              />
+            )}
           </div>
-        </div>
-        <hr />
-        <div className="row">
-          <div className="col-12">
-            <p>Contract Address: {lottery.address}</p>
-            <p>Contract Owner: {lottery.owner}</p>
-          </div>
-        </div>
-        <hr />
-        <div className="row">
-          <div className="col-12">
-            <p>
-              Welcome <b>{isOwner ? "OWNER" : selectedAddress}</b>, you have{" "}
-              <b>
-                {ethers.utils.commify(
-                  ethers.utils.formatUnits(balance).toString()
-                )}{" "}
-                eth
-              </b>{" "}
-              to mint lottery tickets with.
-            </p>
-          </div>
-        </div>
-        {isOwner && (
-          <OwnerOptions
-            _initLottery={this._initLottery}
-            _triggerLotteryDrawing={this._triggerLotteryDrawing}
-            _triggerSetLotteryInactive={this._triggerSetLotteryInactive}
-          />
-        )}
-        <hr />
-        <div>
-          <h3>Ground Rules</h3>
-          <p>
-            Individual Ticket Cost:{" "}
-            <b>
-              {ethers.utils.commify(
-                ethers.utils.formatUnits(lottery.minDrawingIncrement).toString()
-              )}{" "}
-              eth
-            </b>
-          </p>
-          <p>Max Degens Allowed: {lottery.maxPlayersAllowed.toString()}</p>
-        </div>
-        <hr />
-        {lottery.isActive && (
-          <ActiveLotteryDisplay
-            selectedAddress={selectedAddress}
-            lottery={lottery}
-            _handleMintLotteryTickets={this._mintLotteryTickets}
-          />
-        )}
-        {lottery.numTotalTickets > 0 &&
-          !lottery.isCompleted &&
-          !lottery.isActive && (
-            <OpenLotteryDisplay
-              selectedAddress={selectedAddress}
-              lottery={lottery}
-            />
-          )}
-      </div>
+        </main>
+        <Footer myAddress={lottery.address} owner={lottery.owner} />
+      </>
     );
 
     // If everything is loaded, we render the application.
@@ -358,16 +360,13 @@ export class Dapp extends React.Component {
   _mintLotteryTickets = async (value) => {
     const mintValue = await ethers.utils.parseEther(value);
     await this._lottery.mintLotteryTickets({ value: mintValue });
+    return true;
   };
 
   async _updateLottery() {
     console.log("_updateLottery");
-    const currentLotteryId = await this._lottery.currentLotteryId();
+    const currentLotteryId = BigNumber.from(0);
     const numActivePlayers = await this._lottery.numActivePlayers();
-
-    let lottery = {
-      ...(await this._lottery.lotteries(currentLotteryId.toNumber())),
-    };
 
     let activePlayers = [];
     let playerAddress;
@@ -376,17 +375,12 @@ export class Dapp extends React.Component {
       activePlayers.push(playerAddress);
     }
     const winningTicket = await this._lottery.winningTicket();
-    console.log(winningTicket.winningTicketIndex.toString());
-    console.log(winningTicket.addr.toString());
-
-    const pendingWithdrawal = await this._lottery.pendingWithdrawals(
-      0,
-      winningTicket.addr
-    );
-    console.log(pendingWithdrawal.toString());
+    // console.log(winningTicket.winningTicketIndex.toString());
+    // console.log(winningTicket.addr.toString());
 
     const newState = {
-      ...lottery,
+      ...(await this._lottery.lotteries(currentLotteryId.toNumber())),
+      ...(await this._lottery.winningTickets(currentLotteryId.toNumber())),
       id: currentLotteryId,
       address: contractAddress.Lottery,
       owner: await this._lottery.owner(),
@@ -398,6 +392,11 @@ export class Dapp extends React.Component {
       prizeAmount: await this._lottery.prizeAmount(),
       isUserActive: await this._lottery.players(this.state.selectedAddress),
       numTickets: await this._lottery.tickets(this.state.selectedAddress),
+      pendingWithdrawal: await this._lottery.pendingWithdrawals(
+        currentLotteryId.toNumber(),
+        winningTicket.addr
+      ),
+      prize: await this._lottery.prizes(currentLotteryId.toNumber()),
     };
     this.setState({
       lottery: newState,
@@ -416,7 +415,6 @@ export class Dapp extends React.Component {
     await this._lottery.triggerLotteryDrawing();
     const tx = await this._lottery.triggerDepositWinnings();
     const receipt = await tx.wait();
-    console.log(receipt.events[0].args);
     this._updateInfo();
   };
 

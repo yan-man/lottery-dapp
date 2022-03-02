@@ -5,7 +5,7 @@ import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import { ethers } from "ethers";
 
-class ActiveLotteryDisplay extends Component {
+class PreviousLotteryDisplay extends Component {
   constructor(props) {
     super(props);
     this.initialState = {
@@ -15,7 +15,6 @@ class ActiveLotteryDisplay extends Component {
       currentOdds: this._calculateInitialOdds(
         props.lottery.numTickets.toNumber()
       ),
-      showText: true,
     };
     this.state = this.initialState;
   }
@@ -30,7 +29,6 @@ class ActiveLotteryDisplay extends Component {
       currentOdds: this._calculateInitialOdds(
         this.props.lottery.numTickets.toNumber()
       ),
-      showText: true,
     });
   };
   _timeConverter = (UNIX_timestamp) => {
@@ -76,8 +74,7 @@ class ActiveLotteryDisplay extends Component {
     return odds;
   };
   _handleMintLotteryTickets = () => {
-    this.props._handleMintLotteryTickets(this.state.value) &&
-      this.setState({ showText: false });
+    this.props._handleMintLotteryTickets(this.state.value);
   };
   _convertToNumTickets = (value) => {
     if (value !== "" && value !== 0) {
@@ -88,13 +85,14 @@ class ActiveLotteryDisplay extends Component {
     }
     return 0;
   };
+
   render() {
     const { lottery } = { ...this.props };
     return (
       <React.Fragment>
         <div className="row">
           <div className="col-12">
-            <h3>Active Lottery </h3>
+            <h2>Previous Lottery </h2>
             <p>ID#{lottery.lotteryId.toString()}</p>
             <p>
               Start Time: {this._timeConverter(lottery.startTime.toString())}
@@ -103,91 +101,70 @@ class ActiveLotteryDisplay extends Component {
           </div>
         </div>
         <div className="row">
-          <div className="col-16">
-            <Row>
-              <Col>
+          {lottery.isActive && (
+            <>
+              <div className="col-16">
                 <h4>
                   Total Degens:{" "}
                   {lottery.numActivePlayers.toNumber().toLocaleString("en")}{" "}
+                  {lottery.isUserActive && <>{`(Including me!)`}</>}
                 </h4>
-              </Col>
-              <Col>
                 <h4>
                   Total Tickets Minted:{" "}
-                  {lottery.numTotalTickets.toNumber().toLocaleString("en")}
+                  {lottery.numTotalTickets.toNumber().toLocaleString("en")}{" "}
+                  {lottery.isUserActive && (
+                    <>{`(You've already minted ${lottery.numTickets
+                      .toNumber()
+                      .toLocaleString("en")})`}</>
+                  )}
                 </h4>
-              </Col>
-            </Row>
-
-            <p>
-              {lottery.isUserActive && (
-                <>{`Mine: ${lottery.numTickets
-                  .toNumber()
-                  .toLocaleString("en")}`}</>
-              )}
-            </p>
-          </div>
-          <div className="col-12">
-            <Form>
-              <Form.Group className="mb-3" controlId="formBasicEmail">
-                <Form.Label>
-                  How much <b>eth</b> do you want to convert into lottery
-                  tickets?
-                </Form.Label>
-                <Form.Control
-                  type="number"
-                  value={this.state.value}
-                  onChange={this._onChange}
-                  placeholder={`Min: ${ethers.utils.commify(
-                    ethers.utils
-                      .formatUnits(lottery.minDrawingIncrement)
-                      .toString()
-                  )} eth`}
-                />
-                <Form.Text className="text-muted">
-                  You will get odds proportional to the amount of tickets you
-                  mint
-                </Form.Text>
-              </Form.Group>
-              <Button
-                variant="primary"
-                type="submit"
-                onClick={this._handleMintLotteryTickets}
-                className="btn-success"
-                type="button"
-              >
-                Mint
-              </Button>
-            </Form>
-          </div>
-
-          {lottery.isUserActive && (
+              </div>
+              <h4>
+                {lottery.isUserActive && (
+                  <>
+                    You currently have a {this.state.currentOdds}% chance to
+                    win.
+                  </>
+                )}
+              </h4>
+            </>
+          )}
+          {lottery.addr !== "0x0000000000000000000000000000000000000000" && (
             <>
-              <h3>
-                You currently have a {this.state.currentOdds}% chance to win.
+              <h2 style={{ textAlign: "center" }}>Results</h2>
+              <h3 style={{ textAlign: "center" }}>
+                <Row>
+                  <Col>Winner</Col>
+                  <Col>
+                    <b>
+                      {lottery.addr.toUpperCase() ===
+                      this.props.selectedAddress.toUpperCase()
+                        ? "ME"
+                        : lottery.addr}
+                    </b>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>Jackpot</Col>
+                  <Col>
+                    <b>
+                      {ethers.utils.commify(
+                        ethers.utils.formatUnits(lottery.prize).toString()
+                      )}{" "}
+                      eth
+                    </b>
+                  </Col>
+                </Row>
               </h3>
             </>
           )}
 
-          <h2>
-            {this.state.value !== 0 &&
-              this.state.value !== "" &&
-              this.state.showText && (
-                <>
-                  You can mint{" "}
-                  {Number(this.state.numMoreTickets).toLocaleString("en")}{" "}
-                  {lottery.isUserActive && <>more </>}
-                  tickets. You would have a {this.state.odds}% chance of
-                  winning!
-                </>
-              )}
-          </h2>
           <hr />
           <div>
-            <h2>Current Players</h2>
-            <ul>
-              {lottery.numActivePlayers.gt(0) ? (
-                <>
+            {lottery.isActive && (
+              <>
+                <h2>Current Players</h2>
+                <ul>
                   {lottery.activePlayers.map((activePlayer, ind) => {
                     return (
                       <li key={ind}>
@@ -200,13 +177,9 @@ class ActiveLotteryDisplay extends Component {
                       </li>
                     );
                   })}
-                </>
-              ) : (
-                <>
-                  <li>Empty</li>
-                </>
-              )}
-            </ul>
+                </ul>
+              </>
+            )}
           </div>
         </div>
       </React.Fragment>
@@ -214,4 +187,4 @@ class ActiveLotteryDisplay extends Component {
   }
 }
 
-export default ActiveLotteryDisplay;
+export default PreviousLotteryDisplay;

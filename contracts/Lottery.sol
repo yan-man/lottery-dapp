@@ -17,8 +17,9 @@ contract Lottery is Ownable {
     uint256 lotteryId;
     uint256 startTime;
     uint256 endTime;
-    bool isActive;
-    bool isCompleted;
+    bool isActive; // minting tickets is allowed
+    bool isCompleted; // winner was found; winnings were deposited
+    bool isCreated; // is created
   }
   struct TicketDistributionStruct {
     address playerAddress;
@@ -49,6 +50,8 @@ contract Lottery is Ownable {
   uint256 public numTotalTickets;
   uint256 loopCount = 0;
 
+  mapping(uint256 => uint256) public prizes;
+  mapping(uint256 => WinningTicketStruct) public winningTickets;
   mapping(address => bool) public players;
   mapping(address => uint256) public tickets;
   mapping(uint256 => LotteryStruct) public lotteries; // key is lotteryId
@@ -183,7 +186,8 @@ contract Lottery is Ownable {
       startTime: startTime,
       endTime: endTime,
       isActive: true,
-      isCompleted: false
+      isCompleted: false,
+      isCreated: true
     });
     numLotteries = numLotteries.add(1);
     emit NewLottery(msg.sender, startTime, endTime);
@@ -240,6 +244,8 @@ contract Lottery is Ownable {
     - reset players/lotto vals in state
     */
 
+    prizes[currentLotteryId] = prizeAmount;
+
     playerTicketDistribution();
     uint256 winningTicketIndex = performRandomizedDrawing();
     winningTicket.winningTicketIndex = winningTicketIndex;
@@ -265,11 +271,13 @@ contract Lottery is Ownable {
 
     pendingWithdrawals[currentLotteryId][winningTicket.addr] = prizeAmount;
     prizeAmount = 0;
+    lotteries[currentLotteryId].isCompleted = true;
     emit triggerLotteryWinningsDeposited(
       currentLotteryId,
       winningTicket.addr,
       pendingWithdrawals[currentLotteryId][winningTicket.addr]
     );
+    winningTickets[currentLotteryId] = winningTicket;
     resetLottery();
   }
 

@@ -1,8 +1,13 @@
 import React, { Component } from "react";
 import Button from "react-bootstrap/Button";
-
+const { BigNumber } = require("ethers");
 class OwnerOptions extends Component {
-  state = {};
+  constructor(props) {
+    super(props);
+
+    this._initialState = {};
+    this.state = this._initialState;
+  }
   handleInitLottery = () => {
     this.props._initLottery();
   };
@@ -12,6 +17,11 @@ class OwnerOptions extends Component {
   _handleTriggerSetLotteryInactive = () => {
     this.props._triggerSetLotteryInactive();
   };
+  /* TASK: refactor this unixtime function into separate utility function
+   */
+  _unixtimeNow = () => {
+    return Math.floor(Date.now() / 1000);
+  };
   render() {
     return (
       <React.Fragment>
@@ -20,31 +30,38 @@ class OwnerOptions extends Component {
             *As the owner, you can also create new lotteries and do other shit.
           </p>
           <p>
-            <Button
-              onClick={this.handleInitLottery}
-              type="button"
-              className="btn btn-warning"
-            >
-              Create a new lottery
-            </Button>
+            {!this.props.lottery.isCreated && (
+              <Button
+                onClick={this.handleInitLottery}
+                type="button"
+                className="btn-primary"
+              >
+                Create a new lottery
+              </Button>
+            )}
           </p>
           <p>
-            <Button
-              onClick={this._handleTriggerLotteryDrawing}
-              type="button"
-              className="btn btn-warning"
-            >
-              Trigger Lottery Drawing
-            </Button>
+            {this.props.lottery.isActive && (
+              <Button
+                onClick={this._handleTriggerSetLotteryInactive}
+                type="button"
+                className="btn btn-danger"
+              >
+                {/* TASK: better button name, confusing. Maybe like close minting period? something */}
+                [Emergency] End Minting Window
+              </Button>
+            )}
           </p>
           <p>
-            <Button
-              onClick={this._handleTriggerSetLotteryInactive}
-              type="button"
-              className="btn btn-warning"
-            >
-              Set Lottery Inactive
-            </Button>
+            {!this.props.lottery.isActive && this.props.lottery.isCreated && (
+              <Button
+                onClick={this._handleTriggerLotteryDrawing}
+                type="button"
+                className="btn btn-warning"
+              >
+                Start Lottery Drawing
+              </Button>
+            )}
           </p>
         </div>
       </React.Fragment>
