@@ -226,7 +226,7 @@ contract Lottery is Ownable {
    * a function for users to trigger lottery drawing
    *  - modifier - check that lottery end date reached
    */
-  function triggerLotteryDrawing() public isLotteryMintingCompleted {
+  function triggerLotteryDrawing() public isLotteryMintingCompleted onlyOwner {
     console.log("triggerLotteryDrawing");
     /*
     - calculate each player's odds
@@ -239,6 +239,7 @@ contract Lottery is Ownable {
 
     playerTicketDistribution();
     uint256 winningTicketIndex = performRandomizedDrawing();
+    winningTicket.winningTicketIndex = winningTicketIndex;
     findWinningAddress(winningTicketIndex);
 
     emit triggerLotteryWinner(
@@ -267,6 +268,23 @@ contract Lottery is Ownable {
       pendingWithdrawals[currentLotteryId][winningTicket.addr]
     );
     resetLottery();
+  }
+
+  // to handle getting an array of structs
+  function getTicketDistribution(uint256 playerIndex)
+    public
+    view
+    returns (
+      address playerAddress,
+      uint256 startIndex, // inclusive
+      uint256 endIndex // inclusive
+    )
+  {
+    return (
+      ticketDistribution[playerIndex].playerAddress,
+      ticketDistribution[playerIndex].startIndex,
+      ticketDistribution[playerIndex].endIndex
+    );
   }
 
   /**

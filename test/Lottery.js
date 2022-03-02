@@ -80,7 +80,7 @@ describe("Lottery contract", function () {
     beforeEach(async function () {
       const tx = await LotteryContract.initLottery(unixtimeNow, 1);
       currentLotteryId = await LotteryContract.currentLotteryId();
-      owner = addrs[0].address;
+      owner = addrs[0];
     });
     it("Should not allow an invalid lottery to be saved", async function () {
       await expect(
@@ -158,12 +158,12 @@ describe("Lottery contract", function () {
         expectedNumTotalTicketsMinted = BigNumber.from(
           mintValue.div(expectedMinAmountInWei)
         );
-        players.push({
+        players[0] = {
           addr: player1,
           mintValue: mintValue,
           expectedNumTickets: expectedNumTotalTicketsMinted,
           numTickets: await LotteryContract.tickets(player1.address),
-        });
+        };
 
         /// TASK
         /// write a test to always check that total # of tickets per address is expected
@@ -216,12 +216,12 @@ describe("Lottery contract", function () {
           );
           expectedNumTicketsPlayer2 = mintValue.div(expectedMinAmountInWei);
 
-          players.push({
+          players[1] = {
             addr: player2,
             mintValue: mintValue,
             expectedNumTickets: expectedNumTicketsPlayer2,
             numTickets: await LotteryContract.tickets(player2.address),
-          });
+          };
         });
         it("Should mint more lottery tickets for player1", async function () {
           const value = ethers.utils.parseEther("0.1");
@@ -231,7 +231,7 @@ describe("Lottery contract", function () {
           const receipt = await tx.wait();
 
           const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
-          expectedNumTicketsPlayer1 = expectedNumTicketsPlayer1.add(
+          expectedNumTicketsPlayer1 = players[0].expectedNumTickets.add(
             expectedNumTicketsMinted
           );
           expectedNumTotalTicketsMinted = expectedNumTotalTicketsMinted.add(
@@ -265,7 +265,9 @@ describe("Lottery contract", function () {
           // let expectedNumTicketsPlayer1, numTicketsPlayer1, numTicketsPlayer2;
           beforeEach(async function () {
             const mintValue = ethers.utils.parseEther("0.1"); // eth
-            const tx = await LotteryContract.mintLotteryTickets({
+            const tx = await LotteryContract.connect(
+              players[0].addr
+            ).mintLotteryTickets({
               value: mintValue,
             });
 
@@ -276,11 +278,11 @@ describe("Lottery contract", function () {
             expectedNumTotalTicketsMinted = expectedNumTotalTicketsMinted.add(
               expectedNumTicketsMinted
             );
-            players[1].expectedNumTickets = players[1].expectedNumTickets.add(
+            players[0].expectedNumTickets = players[0].expectedNumTickets.add(
               expectedNumTicketsMinted
             );
-            players[1].numTickets = await LotteryContract.tickets(
-              players[1].address
+            players[0].numTickets = await LotteryContract.tickets(
+              players[0].addr.address
             );
           });
           it("Should trigger lottery drawing", async function () {
@@ -288,7 +290,7 @@ describe("Lottery contract", function () {
             // emit event
             // console.log(await LotteryContract.tickets(addrs[0].address));
             // console.log(await LotteryContract.tickets(addrs[1].address));
-            await LotteryContract.setLotteryInactive();
+            await LotteryContract.connect(owner).setLotteryInactive();
             const lottery = {
               ...(await LotteryContract.lotteries(0)),
             };
@@ -296,16 +298,33 @@ describe("Lottery contract", function () {
             await LotteryContract.triggerLotteryDrawing();
             const winningTicket = await LotteryContract.winningTicket();
 
-            /// TASK: after triggering lottery drawing, get winning ticket details
-            /// replicate search here and confirm winning user address matches winning address found by contract
-            /// 30min
+            /* TASK: after triggering lottery drawing, get winning ticket details
+            replicate search here and confirm winning user address matches winning address found by contract
+            30min 
+            */
 
-            const winningTicket = await LotteryContract.ticketDistribution();
+            let ticketDistribution = await Promise.all(
+              players.map(async (player, ind) => {
+                return await LotteryContract.getTicketDistribution(ind);
+              })
+            );
+            // confirm the winner
+            const expectedWinner = ticketDistribution.filter((distribution) => {
+              return (
+                distribution.startIndex.lte(winningTicket.winningTicketIndex) &&
+                distribution.endIndex.gte(winningTicket.winningTicketIndex)
+              );
+            })[0];
 
-            // during hard-coded testing, expect user 2 to be winner
-            // expect(winningTicket.addr).to.be.equal(
-            //   "0x0000000000000000000000000000000000000000"
-            // );
+            expect(expectedWinner.playerAddress).to.be.equal(
+              winningTicket.addr
+            );
+            expect(
+              expectedWinner.startIndex.lte(winningTicket.winningTicketIndex)
+            ).to.be.equal(true);
+            expect(
+              expectedWinner.endIndex.gte(winningTicket.winningTicketIndex)
+            ).to.be.equal(true);
           });
           // describe("...After lottery triggered", function () {
           //   beforeEach(async function () {
