@@ -1,11 +1,11 @@
 import React from "react";
 
 // We'll use ethers to interact with the Ethereum network and our contract
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
-import TokenArtifact from "../contracts/Token.json";
+import LotteryArtifact from "../contracts/Lottery.json";
 import contractAddress from "../contracts/contract-address.json";
 
 // All the logic of this dapp is contained in the Dapp component.
@@ -19,11 +19,19 @@ import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
 
+import OwnerOptions from "./OwnerOptions";
+import ActiveLotteryDisplay from "./ActiveLotteryDisplay";
+import PreviousLotteryDisplay from "./PreviousLotteryDisplay";
+
+import Header from "./Header";
+import Footer from "./Footer";
+import Rules from "./Rules";
+
 // This is the Hardhat Network id, you might change it in the hardhat.config.js.
 // If you are using MetaMask, be sure to change the Network id to 1337.
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
 // to use when deploying to other networks.
-const HARDHAT_NETWORK_ID = '31337';
+const HARDHAT_NETWORK_ID = "31337";
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
@@ -54,6 +62,7 @@ export class Dapp extends React.Component {
       txBeingSent: undefined,
       transactionError: undefined,
       networkError: undefined,
+      lottery: {},
     };
 
     this.state = this.initialState;
@@ -74,9 +83,10 @@ export class Dapp extends React.Component {
     // Note that we pass it a callback that is going to be called when the user
     // clicks a button. This callback just calls the _connectWallet method.
     if (!this.state.selectedAddress) {
+      // this._connectWallet();
       return (
-        <ConnectWallet 
-          connectWallet={() => this._connectWallet()} 
+        <ConnectWallet
+          connectWallet={() => this._connectWallet()}
           networkError={this.state.networkError}
           dismiss={() => this._dismissNetworkError()}
         />
@@ -85,18 +95,77 @@ export class Dapp extends React.Component {
 
     // If the token data or the user's balance hasn't loaded yet, we show
     // a loading component.
-    if (!this.state.tokenData || !this.state.balance) {
+    if (!this.state.selectedAddress || !this.state.lottery.owner) {
       return <Loading />;
     }
+    const { lottery, selectedAddress, balance } = {
+      ...this.state,
+    };
+    const isOwner =
+      selectedAddress.toUpperCase() === lottery.owner.toUpperCase();
+    return (
+      <>
+        <Header />
+        <main className="container h-100" style={{ paddingTop: "80px" }}>
+          <div className="container ">
+            <div className="row">
+              <div className="col-12 ">
+                <p>
+                  Welcome <b>{isOwner ? "OWNER" : selectedAddress}</b>, you have{" "}
+                  <b>
+                    {/* TASK: create a utility function for formatting wei into ethers
+                     */}
+                    {ethers.utils.commify(
+                      ethers.utils.formatUnits(balance).toString()
+                    )}{" "}
+                    eth
+                  </b>{" "}
+                  to mint lottery tickets with.
+                </p>
+              </div>
+            </div>
+            {isOwner && (
+              <OwnerOptions
+                _initLottery={this._initLottery}
+                _triggerLotteryDrawing={this._triggerLotteryDrawing}
+                _triggerSetLotteryInactive={this._triggerSetLotteryInactive}
+                lottery={lottery}
+              />
+            )}
+            <Rules
+              minDrawingIncrement={ethers.utils.commify(
+                ethers.utils.formatUnits(lottery.minDrawingIncrement).toString()
+              )}
+              maxPlayersAllowed={lottery.maxPlayersAllowed
+                .toNumber()
+                .toLocaleString("en")}
+            />
+            {lottery.isActive && (
+              <ActiveLotteryDisplay
+                selectedAddress={selectedAddress}
+                lottery={lottery}
+                _handleMintLotteryTickets={this._mintLotteryTickets}
+              />
+            )}
+            {!lottery.isActive && lottery.isCreated && (
+              <PreviousLotteryDisplay
+                selectedAddress={selectedAddress}
+                lottery={lottery}
+              />
+            )}
+          </div>
+        </main>
+        <Footer myAddress={lottery.address} owner={lottery.owner} />
+      </>
+    );
 
     // If everything is loaded, we render the application.
     return (
       <div className="container p-4">
         <div className="row">
           <div className="col-12">
-            <h1>
-              {this.state.tokenData.name} ({this.state.tokenData.symbol})
-            </h1>
+            <h1>Welcome to the decentralized lottery</h1>
+            <h1>{this.state.currentLotteryId}</h1>
             <p>
               Welcome <b>{this.state.selectedAddress}</b>, you have{" "}
               <b>
@@ -174,7 +243,9 @@ export class Dapp extends React.Component {
 
     // To connect to the user's wallet, we have to run this method.
     // It returns a promise that will resolve to the user's address.
-    const [selectedAddress] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    const [selectedAddress] = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
 
     // Once we have the address, we can initialize the application.
 
@@ -191,14 +262,14 @@ export class Dapp extends React.Component {
       // `accountsChanged` event can be triggered with an undefined newAddress.
       // This happens when the user removes the Dapp from the "Connected
       // list of sites allowed access to your addresses" (Metamask > Settings > Connections)
-      // To avoid errors, we reset the dapp state 
+      // To avoid errors, we reset the dapp state
       if (newAddress === undefined) {
         return this._resetState();
       }
-      
+
       this._initialize(newAddress);
     });
-    
+
     // We reset the dapp state if the network is changed
     window.ethereum.on("chainChanged", ([networkId]) => {
       this._stopPollingData();
@@ -214,13 +285,13 @@ export class Dapp extends React.Component {
       selectedAddress: userAddress,
     });
 
-    // Then, we initialize ethers, fetch the token's data, and start polling
-    // for the user's balance.
+    // Then start polling lottery info
 
     // Fetching the token data and the user's balance are specific to this
     // sample project, but you can reuse the same initialization pattern.
     this._initializeEthers();
-    this._getTokenData();
+    // this._updateLotteryContractDetails();
+    // this._getTokenData();
     this._startPollingData();
   }
 
@@ -230,9 +301,9 @@ export class Dapp extends React.Component {
 
     // Then, we initialize the contract using that provider and the token's
     // artifact. You can do this same thing with your contracts.
-    this._token = new ethers.Contract(
-      contractAddress.Token,
-      TokenArtifact.abi,
+    this._lottery = new ethers.Contract(
+      contractAddress.Lottery,
+      LotteryArtifact.abi,
       this._provider.getSigner(0)
     );
   }
@@ -245,10 +316,9 @@ export class Dapp extends React.Component {
   // don't need to poll it. If that's the case, you can just fetch it when you
   // initialize the app, as we do with the token data.
   _startPollingData() {
-    this._pollDataInterval = setInterval(() => this._updateBalance(), 1000);
-
+    this._pollDataInterval = setInterval(() => this._updateInfo(), 3000);
     // We run it once immediately so we don't have to wait for it
-    this._updateBalance();
+    this._updateInfo();
   }
 
   _stopPollingData() {
@@ -265,10 +335,84 @@ export class Dapp extends React.Component {
     this.setState({ tokenData: { name, symbol } });
   }
 
-  async _updateBalance() {
-    const balance = await this._token.balanceOf(this.state.selectedAddress);
+  async _updateInfo() {
+    console.log("_updateInfo");
+    this._updateUser();
+    this._updateLottery();
+  }
+
+  async _updateUser() {
+    console.log("_updateUser");
+    const balance = await this._provider.getBalance(this.state.selectedAddress);
     this.setState({ balance });
   }
+
+  _mintLotteryTickets = async (value) => {
+    const mintValue = await ethers.utils.parseEther(value);
+    await this._lottery.mintLotteryTickets({ value: mintValue });
+    return true;
+  };
+
+  async _updateLottery() {
+    console.log("_updateLottery");
+    const currentLotteryId = BigNumber.from(0);
+    const numActivePlayers = await this._lottery.numActivePlayers();
+
+    let activePlayers = [];
+    let playerAddress;
+    for (let ind = 0; ind < numActivePlayers; ind++) {
+      playerAddress = await this._lottery.listOfPlayers(ind);
+      activePlayers.push(playerAddress);
+    }
+    const winningTicket = await this._lottery.winningTicket();
+    // console.log(winningTicket.winningTicketIndex.toString());
+    // console.log(winningTicket.addr.toString());
+
+    const newState = {
+      ...(await this._lottery.lotteries(currentLotteryId.toNumber())),
+      ...(await this._lottery.winningTickets(currentLotteryId.toNumber())),
+      id: currentLotteryId,
+      address: contractAddress.Lottery,
+      owner: await this._lottery.owner(),
+      minDrawingIncrement: await this._lottery.MIN_DRAWING_INCREMENT(),
+      maxPlayersAllowed: await this._lottery.maxPlayersAllowed(),
+      numTotalTickets: await this._lottery.numTotalTickets(),
+      activePlayers,
+      numActivePlayers,
+      prizeAmount: await this._lottery.prizeAmount(),
+      isUserActive: await this._lottery.players(this.state.selectedAddress),
+      numTickets: await this._lottery.tickets(this.state.selectedAddress),
+      pendingWithdrawal: await this._lottery.pendingWithdrawals(
+        currentLotteryId.toNumber(),
+        winningTicket.addr
+      ),
+      prize: await this._lottery.prizes(currentLotteryId.toNumber()),
+    };
+    this.setState({
+      lottery: newState,
+    });
+  }
+
+  _initLottery = async () => {
+    console.log("init lottery");
+    const unixtimeNow = Math.floor(Date.now() / 1000);
+    await this._lottery.initLottery(unixtimeNow, 1);
+    this._updateInfo();
+  };
+
+  _triggerLotteryDrawing = async () => {
+    console.log("_triggerLotteryDrawing");
+    await this._lottery.triggerLotteryDrawing();
+    const tx = await this._lottery.triggerDepositWinnings();
+    const receipt = await tx.wait();
+    this._updateInfo();
+  };
+
+  _triggerSetLotteryInactive = async () => {
+    console.log("_triggerSetLotteryInactive");
+    await this._lottery.setLotteryInactive();
+    this._updateInfo();
+  };
 
   // This method sends an ethereum transaction to transfer tokens.
   // While this action is specific to this application, it illustrates how to
@@ -355,14 +499,14 @@ export class Dapp extends React.Component {
     this.setState(this.initialState);
   }
 
-  // This method checks if Metamask selected network is Localhost:8545 
+  // This method checks if Metamask selected network is Localhost:8545
   _checkNetwork() {
     if (window.ethereum.networkVersion === HARDHAT_NETWORK_ID) {
       return true;
     }
 
-    this.setState({ 
-      networkError: 'Please connect Metamask to Localhost:8545'
+    this.setState({
+      networkError: "Please connect Metamask to Localhost:8545",
     });
 
     return false;
