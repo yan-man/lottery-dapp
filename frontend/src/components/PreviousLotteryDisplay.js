@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 class PreviousLotteryDisplay extends Component {
   constructor(props) {
@@ -17,6 +17,139 @@ class PreviousLotteryDisplay extends Component {
       ),
     };
     this.state = this.initialState;
+  }
+
+  render() {
+    const { lottery } = { ...this.props };
+    return (
+      <React.Fragment>
+        <div className="row">
+          <div className="col-12">
+            <h2>Previous Lottery </h2>
+            <p>ID#{lottery.lotteryId.toString()}</p>
+            <p>
+              Start Time: {this._timeConverter(lottery.startTime.toString())}
+            </p>
+            <p>End Time: {this._timeConverter(lottery.endTime.toString())}</p>
+          </div>
+        </div>
+        <div className="row">
+          {lottery.isActive && (
+            <>
+              <div className="col-16">
+                <h4>
+                  Total Degens:{" "}
+                  {lottery.numActivePlayers.toNumber().toLocaleString("en")}{" "}
+                  {lottery.isUserActive && <>{`(Including me!)`}</>}
+                </h4>
+                <h4>
+                  Total Tickets Minted:{" "}
+                  {lottery.numTotalTickets.toNumber().toLocaleString("en")}{" "}
+                  {lottery.isUserActive && (
+                    <>{`(You've already minted ${lottery.numTickets
+                      .toNumber()
+                      .toLocaleString("en")})`}</>
+                  )}
+                </h4>
+              </div>
+              <h4>
+                {lottery.isUserActive && (
+                  <>
+                    You currently have a {this.state.currentOdds}% chance to
+                    win.
+                  </>
+                )}
+              </h4>
+            </>
+          )}
+          {lottery.addr !== "0x0000000000000000000000000000000000000000" && (
+            <div className="py-4">
+              <h2 style={{ textAlign: "center" }}>Results</h2>
+              <h3 style={{ textAlign: "center" }}>
+                <Row>
+                  <Col>Winner</Col>
+                  <Col>
+                    <b>
+                      {lottery.addr.toUpperCase() ===
+                      this.props.selectedAddress.toUpperCase()
+                        ? "ME"
+                        : lottery.addr}
+                    </b>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>Jackpot</Col>
+                  <Col>
+                    <b>
+                      {ethers.utils.commify(
+                        ethers.utils.formatUnits(lottery.prize).toString()
+                      )}{" "}
+                      eth
+                    </b>
+                  </Col>
+                </Row>
+              </h3>
+              <div className="pt-3 d-flex justify-content-center">
+                <h3>Pending Withdrawal Remaining</h3>
+              </div>
+              <div className="d-flex justify-content-center">
+                <h3>
+                  {
+                    <b>
+                      {ethers.utils.commify(
+                        ethers.utils
+                          .formatUnits(lottery.pendingWithdrawal)
+                          .toString()
+                      )}{" "}
+                      eth
+                    </b>
+                  }
+                </h3>
+              </div>
+
+              {lottery.addr.toUpperCase() ===
+                this.props.selectedAddress.toUpperCase() &&
+                lottery.pendingWithdrawal.gt(BigNumber.from(0)) && (
+                  <div className="p-5 d-flex justify-content-center">
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      onClick={this._handleWithdrawWinnings}
+                      className="btn-success px-5 py-2"
+                      type="button"
+                      style={{ fontSize: "20px" }}
+                    >
+                      Withdraw
+                    </Button>
+                  </div>
+                )}
+            </div>
+          )}
+          <hr />
+          <div className="py-2">
+            {lottery.isCreated && !this.props.lottery.isCompleted && (
+              <>
+                <h2>Current Players</h2>
+                <ul>
+                  {lottery.activePlayers.map((activePlayer, ind) => {
+                    return (
+                      <li key={ind}>
+                        <div className="col-2">
+                          {activePlayer.toUpperCase() ===
+                          this.props.selectedAddress.toUpperCase()
+                            ? "ME"
+                            : activePlayer}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+      </React.Fragment>
+    );
   }
 
   _onChange = (e) => {
@@ -85,106 +218,9 @@ class PreviousLotteryDisplay extends Component {
     }
     return 0;
   };
-
-  render() {
-    const { lottery } = { ...this.props };
-    return (
-      <React.Fragment>
-        <div className="row">
-          <div className="col-12">
-            <h2>Previous Lottery </h2>
-            <p>ID#{lottery.lotteryId.toString()}</p>
-            <p>
-              Start Time: {this._timeConverter(lottery.startTime.toString())}
-            </p>
-            <p>End Time: {this._timeConverter(lottery.endTime.toString())}</p>
-          </div>
-        </div>
-        <div className="row">
-          {lottery.isActive && (
-            <>
-              <div className="col-16">
-                <h4>
-                  Total Degens:{" "}
-                  {lottery.numActivePlayers.toNumber().toLocaleString("en")}{" "}
-                  {lottery.isUserActive && <>{`(Including me!)`}</>}
-                </h4>
-                <h4>
-                  Total Tickets Minted:{" "}
-                  {lottery.numTotalTickets.toNumber().toLocaleString("en")}{" "}
-                  {lottery.isUserActive && (
-                    <>{`(You've already minted ${lottery.numTickets
-                      .toNumber()
-                      .toLocaleString("en")})`}</>
-                  )}
-                </h4>
-              </div>
-              <h4>
-                {lottery.isUserActive && (
-                  <>
-                    You currently have a {this.state.currentOdds}% chance to
-                    win.
-                  </>
-                )}
-              </h4>
-            </>
-          )}
-          {lottery.addr !== "0x0000000000000000000000000000000000000000" && (
-            <>
-              <h2 style={{ textAlign: "center" }}>Results</h2>
-              <h3 style={{ textAlign: "center" }}>
-                <Row>
-                  <Col>Winner</Col>
-                  <Col>
-                    <b>
-                      {lottery.addr.toUpperCase() ===
-                      this.props.selectedAddress.toUpperCase()
-                        ? "ME"
-                        : lottery.addr}
-                    </b>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col>Jackpot</Col>
-                  <Col>
-                    <b>
-                      {ethers.utils.commify(
-                        ethers.utils.formatUnits(lottery.prize).toString()
-                      )}{" "}
-                      eth
-                    </b>
-                  </Col>
-                </Row>
-              </h3>
-            </>
-          )}
-
-          <hr />
-          <div>
-            {lottery.isCreated && !this.props.lottery.isCompleted && (
-              <>
-                <h2>Current Players</h2>
-                <ul>
-                  {lottery.activePlayers.map((activePlayer, ind) => {
-                    return (
-                      <li key={ind}>
-                        <div className="col-2">
-                          {activePlayer.toUpperCase() ===
-                          this.props.selectedAddress.toUpperCase()
-                            ? "ME"
-                            : activePlayer}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            )}
-          </div>
-        </div>
-      </React.Fragment>
-    );
-  }
+  _handleWithdrawWinnings = () => {
+    this.props.withdrawWinnings(this.props.lottery.id.toNumber());
+  };
 }
 
 export default PreviousLotteryDisplay;
