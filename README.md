@@ -62,9 +62,9 @@ The first address provided by Hardhat's local network is the contract `Owner`. C
 
 [`Owner`] Create a new lottery instance by clicking the `Create a new lottery` button. Accept the Metamask transaction.
 
-<img src="./readme/init-lottery.png" height="200"/>
+<img src="./readme/init-lottery.png" height="300"/>
 
-<img src="./readme/init-lottery2.png" height="200"/>
+<img src="./readme/init-lottery2.png" height="300"/>
 
 Lottery details should populate. `Players` can use eth to mint lottery tickets - each one costs `0.0001 eth`. The countdown shows you how long is remaining until the minting period ends, at which point no more tickets can be minted for the current lottery.
 
