@@ -108,6 +108,14 @@ export class Dapp extends React.Component {
         <Header />
         <main className="container h-100" style={{ paddingTop: "80px" }}>
           <div className="container ">
+            <Rules
+              minDrawingIncrement={ethers.utils.commify(
+                ethers.utils.formatUnits(lottery.minDrawingIncrement).toString()
+              )}
+              maxPlayersAllowed={lottery.maxPlayersAllowed
+                .toNumber()
+                .toLocaleString("en")}
+            />
             <div className="row">
               <div className="col-12 ">
                 <p>
@@ -132,14 +140,7 @@ export class Dapp extends React.Component {
                 lottery={lottery}
               />
             )}
-            <Rules
-              minDrawingIncrement={ethers.utils.commify(
-                ethers.utils.formatUnits(lottery.minDrawingIncrement).toString()
-              )}
-              maxPlayersAllowed={lottery.maxPlayersAllowed
-                .toNumber()
-                .toLocaleString("en")}
-            />
+
             {lottery.isActive && (
               <ActiveLotteryDisplay
                 selectedAddress={selectedAddress}
@@ -246,7 +247,7 @@ export class Dapp extends React.Component {
   // don't need to poll it. If that's the case, you can just fetch it when you
   // initialize the app, as we do with the token data.
   _startPollingData() {
-    this._pollDataInterval = setInterval(() => this._updateInfo(), 3000);
+    this._pollDataInterval = setInterval(() => this._updateInfo(), 5000);
     // We run it once immediately so we don't have to wait for it
     this._updateInfo();
   }
@@ -266,13 +267,13 @@ export class Dapp extends React.Component {
   }
 
   async _updateInfo() {
-    console.log("_updateInfo");
+    // console.log("_updateInfo");
     this._updateUser();
     this._updateLottery();
   }
 
   async _updateUser() {
-    console.log("_updateUser");
+    // console.log("_updateUser");
     const balance = await this._provider.getBalance(this.state.selectedAddress);
     this.setState({ balance });
   }
@@ -284,7 +285,7 @@ export class Dapp extends React.Component {
   };
 
   async _updateLottery() {
-    console.log("_updateLottery");
+    // console.log("_updateLottery");
     const currentLotteryId = BigNumber.from(0);
     const numActivePlayers = await this._lottery.numActivePlayers();
 
@@ -294,9 +295,17 @@ export class Dapp extends React.Component {
       playerAddress = await this._lottery.listOfPlayers(ind);
       activePlayers.push(playerAddress);
     }
-    const winningTicket = await this._lottery.winningTicket();
+    const winningTicket = await this._lottery.winningTickets(
+      currentLotteryId.toNumber()
+    );
     // console.log(winningTicket.winningTicketIndex.toString());
-    // console.log(winningTicket.addr.toString());
+    // console.log(winningTicket);
+    // console.log(
+    //   await this._lottery.pendingWithdrawals(
+    //     currentLotteryId.toNumber(),
+    //     winningTicket.addr
+    //   )
+    // );
 
     const newState = {
       ...(await this._lottery.lotteries(currentLotteryId.toNumber())),
@@ -316,6 +325,7 @@ export class Dapp extends React.Component {
         currentLotteryId.toNumber(),
         winningTicket.addr
       ),
+      winningTicket,
       prize: await this._lottery.prizes(currentLotteryId.toNumber()),
     };
     this.setState({
@@ -335,6 +345,10 @@ export class Dapp extends React.Component {
     await this._lottery.triggerLotteryDrawing();
     const tx = await this._lottery.triggerDepositWinnings();
     const receipt = await tx.wait();
+
+    const { lotteryId, winningAddress, amountDeposited } =
+      receipt.events[0].args;
+    console.log(amountDeposited.toString());
     this._updateInfo();
   };
 

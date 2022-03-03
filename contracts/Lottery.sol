@@ -27,6 +27,7 @@ contract Lottery is Ownable {
     uint256 endIndex; // inclusive
   }
   struct WinningTicketStruct {
+    uint256 currentLotteryId;
     uint256 winningTicketIndex;
     address addr;
   }
@@ -248,6 +249,7 @@ contract Lottery is Ownable {
 
     playerTicketDistribution();
     uint256 winningTicketIndex = performRandomizedDrawing();
+    winningTicket.currentLotteryId = currentLotteryId;
     winningTicket.winningTicketIndex = winningTicketIndex;
     findWinningAddress(winningTicketIndex);
 
@@ -259,7 +261,7 @@ contract Lottery is Ownable {
   }
 
   function triggerDepositWinnings() public {
-    // console.log("triggerDepositWinnings");
+    console.log("triggerDepositWinnings");
     /*
     - calculate each player's odds
     - trigger lottery drawing with random numbers
@@ -445,15 +447,16 @@ contract Lottery is Ownable {
 
     // keep running total of num tickets and players to reset so that gas is saved vs deleting arrays
     // ie overwrite arrays instead of deleting
-    winningTicket = WinningTicketStruct({
-      winningTicketIndex: 0,
-      addr: address(0)
-    });
     numTotalTickets = 0;
     numActivePlayers = 0;
     lotteries[currentLotteryId].isActive = false;
     lotteries[currentLotteryId].isCompleted = true;
     currentLotteryId = currentLotteryId.add(1);
+    winningTicket = WinningTicketStruct({
+      currentLotteryId: 0,
+      winningTicketIndex: 0,
+      addr: address(0)
+    });
   }
 
   /**
