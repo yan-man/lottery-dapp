@@ -132,6 +132,26 @@ $ npx hardhat test
 
 ![smart contract test](./readme/test.png)
 
+## Design Patterns
+
+### Withdrawal Pattern
+
+Allow users to withdraw winnings from pending withdrawals rather than pushing winnings to them.
+
+### Gas Optimization
+
+Rather than deleting variables, overwrite them (during lottery reset). This especially applies to `array` types - in successive lotteries, overwrite array keys if possible rather than appending. Because we'll be overwriting, cannot trust `listOfPlayers` array to store ground truth on participants (they could be vestiges from previous lotteries). Rather than having to loop over the full list to check they are active in the current lottery, store another variable mapping `players` to keep track of active participants in current lottery.
+
+Manage ticket distributions by storing the starting/ending ticket index corresponding to each `player` rather than storing the , which would be dynamically sized and could grow large depending on the pot size. By limiting max number of participants, we can cap the `ticketDistribution` array to be of size `numActivePlayers` rather than `numTotalTickets`.
+
+### Access Restriction
+
+`Ownable` contract restricts some functions from non-Owner access.
+
+### SafeMath
+
+Utilize `SafeMath` to perform calculations on `uint256` types to prevent overflow.
+
 ## Further
 
 ### `Lottery.sol`
@@ -142,15 +162,18 @@ $ npx hardhat test
 - prevent owner from participating in lottery for conflict of interest's sake
 - deploy on test net: maybe Rinkeby to handle the random number generator dev tool
 - currently the process of performing a lottery drawing was split into 2 functions - `triggerLotteryDrawing` and `triggerDepositWinnings` just in case the binary search took too much gas, rendering the winnign funds un-deposited. Maybe these functions can be combined together with no loss in fidelity.
+- create refund functionality for when previous lotteries are cancelled without determining a winner.
 
 ### Front End
 
 - refactor components, create utility modules, etc.
-- improve CSS, UI/UX, etc
+- improve CSS, UI/UX, etc.
+
+### Testing
+
+- more tests for failure paths; increase code coverage.
 
 ## What’s Included?
-
-Your environment will have everything you need to build a Dapp powered by Hardhat and React.
 
 - [Frontend/Dapp](./frontend): A [Create React App](https://github.com/facebook/create-react-app) Dapp which interacts with the `Lottery.sol` smart contract.
 - [Hardhat](https://hardhat.org/): An Ethereum development task runner and testing network.
@@ -158,3 +181,7 @@ Your environment will have everything you need to build a Dapp powered by Hardha
 - [Chai](https://www.chaijs.com/): A JavaScript assertion library.
 - [ethers.js](https://docs.ethers.io/v5/): A JavaScript library for interacting with Ethereum.
 - [Waffle](https://github.com/EthWorks/Waffle/): To have Ethereum-specific Chai assertions/mathers.
+
+## License
+
+All non-Hardhat code is unlicensed. Copyright Yan Man 2022.
