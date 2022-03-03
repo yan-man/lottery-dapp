@@ -63,36 +63,30 @@ class PreviousLotteryDisplay extends Component {
             </>
           )}
           {lottery.addr !== "0x0000000000000000000000000000000000000000" && (
-            <div className="py-4">
-              <h2 style={{ textAlign: "center" }}>Results</h2>
-              <h3 style={{ textAlign: "center" }}>
-                <Row>
-                  <Col>Winner</Col>
-                  <Col>
-                    <b>
-                      {lottery.addr.toUpperCase() ===
-                      this.props.selectedAddress.toUpperCase()
-                        ? "ME"
-                        : lottery.addr}
-                    </b>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col>Jackpot</Col>
-                  <Col>
-                    <b>
-                      {ethers.utils.commify(
-                        ethers.utils.formatUnits(lottery.prize).toString()
-                      )}{" "}
-                      eth
-                    </b>
-                  </Col>
-                </Row>
+            <div className="py-4 ">
+              <h2 className="justify-content-left">Results</h2>
+              <h3 className="justify-content-left">
+                Winner:{" "}
+                <b>
+                  {lottery.addr.toUpperCase() ===
+                  this.props.selectedAddress.toUpperCase()
+                    ? "ME"
+                    : lottery.addr}
+                </b>
               </h3>
-              <div className="pt-3 d-flex justify-content-center">
+              <h3>
+                Jackpot:{" "}
+                <b>
+                  {ethers.utils.commify(
+                    ethers.utils.formatUnits(lottery.prize).toString()
+                  )}{" "}
+                  eth
+                </b>
+              </h3>
+              <div className="pt-3 d-flex justify-content-left">
                 <h3>Pending Withdrawal Remaining</h3>
               </div>
-              <div className="d-flex justify-content-center">
+              <div className="d-flex justify-content-left">
                 <h3>
                   {
                     <b>
@@ -110,7 +104,7 @@ class PreviousLotteryDisplay extends Component {
               {lottery.addr.toUpperCase() ===
                 this.props.selectedAddress.toUpperCase() &&
                 lottery.pendingWithdrawal.gt(BigNumber.from(0)) && (
-                  <div className="p-5 d-flex justify-content-center">
+                  <div className="p-5 d-flex justify-content-left">
                     <Button
                       variant="primary"
                       type="submit"

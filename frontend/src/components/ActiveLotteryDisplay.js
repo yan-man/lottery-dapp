@@ -19,13 +19,12 @@ class ActiveLotteryDisplay extends Component {
       timeRemaining: 0,
     };
     this.state = this.initialState;
-    this._startPollingData();
   }
 
   render() {
     const { lottery } = { ...this.props };
     return (
-      <React.Fragment className="h-100">
+      <React.Fragment>
         <Col className="col-8">
           <div className="col-12">
             <Form>
@@ -166,6 +165,9 @@ class ActiveLotteryDisplay extends Component {
       </React.Fragment>
     );
   }
+  componentDidMount() {
+    this._startPollingData();
+  }
   _onChange = (e) => {
     const convertedNumTickets = this._convertToNumTickets(e.target.value);
     this.setState({
@@ -196,6 +198,15 @@ class ActiveLotteryDisplay extends Component {
           .toLocaleString("en"),
       });
     }, 1000);
+  }
+  componentWillUnmount() {
+    // We poll the user's balance, so we have to stop doing that when Dapp
+    // gets unmounted
+    this._stopPollingData();
+  }
+  _stopPollingData() {
+    clearInterval(this._pollDataInterval);
+    this._pollDataInterval = undefined;
   }
   _timeConverter = (UNIX_timestamp) => {
     const a = new Date(UNIX_timestamp * 1000);

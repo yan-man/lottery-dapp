@@ -13,7 +13,7 @@ const Rules = (props) => {
         <ListGroupItem>
           <ul>
             <li>
-              Ticket Floor: <b>{props.minDrawingIncrement} eth</b>
+              Ticket Cost: <b>{props.minDrawingIncrement} eth</b>
             </li>
             <li>Max DEGENS Allowed Per Lottery: {props.maxPlayersAllowed}</li>
           </ul>

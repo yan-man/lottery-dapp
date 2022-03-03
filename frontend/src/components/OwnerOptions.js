@@ -40,11 +40,10 @@ class OwnerOptions extends Component {
                 Create a new lottery
               </Button>
             )}
-
-            {this.props.lottery.isCompleted && (
-              <h1>Redeploy the Contract to Start Over</h1>
-            )}
           </p>
+          {this.props.lottery.isCompleted && (
+            <h1>Redeploy the Contract to Start Over</h1>
+          )}
           <p>
             {this.props.lottery.isActive && (
               <Button
@@ -64,7 +63,7 @@ class OwnerOptions extends Component {
                 <Button
                   onClick={this._handleTriggerLotteryDrawing}
                   type="button"
-                  className="btn btn-warning"
+                  className="btn btn-success"
                 >
                   Start Lottery Drawing
                 </Button>
