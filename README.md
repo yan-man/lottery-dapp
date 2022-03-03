@@ -1,8 +1,8 @@
-# DEGENtralized Lottery v0.1
+# DEGENtralized Lottery v0.1.0
 
 A decentralized lottery Dapp. For degenerates.
 
-This project is a demo front end implementation with a decentralized lottery smart contract built on ethereum. It allows:
+This project is a front end demo of a decentralized lottery smart contract built on ethereum. It allows:
 
 - the ability to create lotteries with customizable parameters like maximum number of participants, variable minting time periods, or ticket price floor
 - players to mint lottery tickets by depositing eth - where their odds of winning correspond to the proportion of tickets they mint relative to the total pot
@@ -27,18 +27,18 @@ Then run Hardhat's testing network:
 $ npx hardhat node
 ```
 
-Then, on a new terminal, go to the repository's root folder and run this to
+Then on a new terminal, go to the repository's root folder and run this to
 deploy your contract:
 
 ```sh
 $ npx hardhat run scripts/deploy.js --network localhost
 ```
 
-You should see contract address details in response:
+You should see contract deployment status displayed on the terminal.
 
 ![deployed contract](./readme/deployed-contract.png)
 
-Finally, we can run the frontend with:
+Run the frontend with:
 
 ```sh
 $ cd frontend
@@ -46,13 +46,13 @@ $ npm install
 $ npm start
 ```
 
-Open [http://localhost:3000/](http://localhost:3000/) to see your Dapp. You will
+Open [http://localhost:3000/](http://localhost:3000/) to interact with the Dapp. You will
 need to have [Metamask](https://metamask.io) installed and listening to
 `localhost 8545`.
 
 ## User Guide
 
-First, connect your wallet. You should be redirected to the Dapp.
+First, connect your wallet.
 
 ![connect wallet](./readme/connect-wallet.png)
 
@@ -60,11 +60,13 @@ First, connect your wallet. You should be redirected to the Dapp.
 
 The first address provided by Hardhat's local network is the contract `Owner`. Connect to Metamask using that account. `Owner` has special privileges.
 
-[`Owner`] Create a new lottery instance by clicking the button. Accept the Metamask prompt.
+[`Owner`] Create a new lottery instance by clicking the `Create a new lottery` button. Accept the Metamask transaction.
 
-<img src="./readme/init-lottery.gif" height="400"/>
+<img src="./readme/init-lottery.png" height="200"/>
 
-Lottery details should populate. `Players` can use eth to mint lottery tickets. Each ticket costs `0.0001 eth` to mint. The countdown shows you how long is remaining until the minting period ends, at which point no more tickets can be created for the current lottery.
+<img src="./readme/init-lottery2.png" height="200"/>
+
+Lottery details should populate. `Players` can use eth to mint lottery tickets - each one costs `0.0001 eth`. The countdown shows you how long is remaining until the minting period ends, at which point no more tickets can be minted for the current lottery.
 
 ### Minting Tickets
 
