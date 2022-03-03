@@ -64,9 +64,9 @@ The first address provided by Hardhat's local network is the contract `Owner`. C
 
 <img src="./readme/init-lottery.png" height="300"/>
 
-<img src="./readme/init-lottery2.png" height="300"/>
-
 Lottery details should populate. `Players` can use eth to mint lottery tickets - each one costs `0.0001 eth`. The countdown shows you how long is remaining until the minting period ends, at which point no more tickets can be minted for the current lottery.
+
+<img src="./readme/init-lottery2.png" height="300"/>
 
 ### Minting Tickets
 
@@ -137,11 +137,11 @@ $ npx hardhat test
 ### `Lottery.sol`
 
 - add transaction fees for contract owner
-- implementation of cryptographic random number generator (https://docs.chain.link/docs/get-a-random-number/)
+- implementation of oracle as [random number generator](https://docs.chain.link/docs/get-a-random-number/)
 - allow for multiple concurrent lotteries
-- prevent owner from participating in lottery for conflict of interest sake
-- deploy on test net: maybe rinkeby to handle chain link
-- currently the process of performing a lottery drawing was split into 2 functions - `triggerLotteryDrawing` and `triggerDepositWinnings` just in case the binary search took too much gas. Maybe these functions can be combined together.
+- prevent owner from participating in lottery for conflict of interest's sake
+- deploy on test net: maybe Rinkeby to handle the random number generator dev tool
+- currently the process of performing a lottery drawing was split into 2 functions - `triggerLotteryDrawing` and `triggerDepositWinnings` just in case the binary search took too much gas, rendering the winnign funds un-deposited. Maybe these functions can be combined together with no loss in fidelity.
 
 ### Front End
 
