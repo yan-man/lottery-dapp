@@ -1,4 +1,4 @@
-# DEGENtralized Lottery v0.1.0
+# DEGENtralized Lottery v0.1
 
 A decentralized lottery Dapp. For degenerates.
 
