@@ -184,4 +184,4 @@ Utilize `SafeMath` to perform calculations on `uint256` types to prevent overflo
 
 ## License
 
-All non-Hardhat code is unlicensed. Copyright Yan Man 2022.
+All non-Hardhat code is unlicensed. Yan Man 2022.
