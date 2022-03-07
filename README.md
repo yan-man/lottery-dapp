@@ -114,11 +114,13 @@ By default, the lottery minting period will be open for 1 hour. Lottery drawings
 
 ### How is the Winner Determined?
 
-In `v0.1.0`, the winner is not randomly selected (future implementations will be - randomness requires integration of off-chain oracles). It is the participant with the ticket position at the 75th percentile of total ticket purchases. Ticket distributions are determined after minting period has closed, and are in ascending order of initial purchase.
+In `v0.1`, the winner is not randomly selected (future implementations will be - randomness requires integration of off-chain oracles). It is the participant with the ticket position at the 75th percentile of total ticket purchases. Ticket distributions are determined after minting period has closed, and are in ascending order of initial purchase.
 
 For example, if `Player1` buys 20 tickets (1) and `Player2` buys 70 tickets (2), then `Player1` buys another 10 tickets (3), there would be a total of 100 tickets. `Player1`'s ticket positions would be from 1-30, and `Player2`'s from 31-100.
 
 Because the winner is determined at the 75th percentile, that would mean the player with the ticket position at 75 would win, ie `Player2`.
+
+In future versions, winners' odds will be directly correlated to the proportion of outstanding tickets sold for that lottery. For example, `Player1` in the example above would have a 30% chance of winning (they hold 30 tickets out of the total of 100 tickets sold), and `Player2` would have a 70% chance of winning (they hold 70 tickets out of the total of 100).
 
 ## Smart Contract Testing
 

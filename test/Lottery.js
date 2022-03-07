@@ -127,7 +127,7 @@ describe("Lottery contract", function () {
         );
       });
 
-      it("Should mint lottery tickets for new player1", async function () {
+      it("*Happy Path: Should mint lottery tickets for new player1", async function () {
         const value = ethers.utils.parseEther("1.0");
         const tx = await LotteryContract.mintLotteryTickets({
           value: value, // Sends exactly 1.0 ether

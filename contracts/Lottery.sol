@@ -3,14 +3,12 @@
 pragma solidity ^0.8.0;
 
 // load other contracts
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 // for debugging
 import "hardhat/console.sol";
 
 contract Lottery is Ownable {
-  using SafeMath for uint256;
   using Math for uint256;
 
   // State Variables
@@ -36,15 +34,15 @@ contract Lottery is Ownable {
    */
   uint256 public constant MIN_DRAWING_INCREMENT = 100000000000000; // 0.0001 ETH; min eth amount to enter lottery.
   uint256 public constant NUMBER_OF_HOURS = 168; // 1 week by default; configurable
+  uint256 public maxPlayersAllowed = 1000;
 
   // max # loops allowed for binary search; to prevent some bugs causing infinite loops in binary search
   uint256 public maxLoops = 10;
   uint256 loopCount = 0; // for binary search
-  uint256 public maxPlayersAllowed = 1000;
 
   uint256 public currentLotteryId = 0;
   uint256 public numLotteries = 0;
-  uint256 public prizeAmount; // winnings. Probably duplicate and can be removed. Just use numTotalTickets.div(MIN_DRAWING_INCREMENT) to calculate prize amount
+  uint256 public prizeAmount; // winnings. Probably duplicate and can be removed. Just use numTotalTickets/ (MIN_DRAWING_INCREMENT) to calculate prize amount
 
   WinningTicketStruct public winningTicket;
   TicketDistributionStruct[] public ticketDistribution;
@@ -63,7 +61,7 @@ contract Lottery is Ownable {
 
   // modifiers
 
-  /* check that new lottery is a valid implementation
+  /* @dev check that new lottery is a valid implementation
   previous lottery must be inactive for new lottery to be saved
   for when new lottery will be saved
    */
@@ -72,11 +70,11 @@ contract Lottery is Ownable {
     LotteryStruct memory lottery = lotteries[currentLotteryId];
     require(
       lottery.isActive == false,
-      "current lottery must be inactive to save a new one"
+      "Lottery: current lottery must be inactive to save a new one"
     );
     _;
   }
-  /* check that minting period is still open
+  /* @dev check that minting period is still open
   for when user tries to mint more tickets
    */
   modifier isLotteryMintingOpen() {
@@ -84,11 +82,11 @@ contract Lottery is Ownable {
       lotteries[currentLotteryId].isActive == true &&
         lotteries[currentLotteryId].endTime > block.timestamp &&
         lotteries[currentLotteryId].startTime <= block.timestamp,
-      "current lottery must be active; current time must be within lottery time frame"
+      "Lottery: current lottery must be active; current time must be within lottery time frame"
     );
     _;
   }
-  /* check that minting period is completed, and lottery drawing can begin
+  /* @dev check that minting period is completed, and lottery drawing can begin
   either:
   1) minting period manually ended, ie lottery is inactive. Then drawing can begin immediately.
   2) lottery minting period has ended organically, and lottery is still active at that point
@@ -98,7 +96,7 @@ contract Lottery is Ownable {
       (lotteries[currentLotteryId].isActive == true &&
         lotteries[currentLotteryId].endTime < block.timestamp) ||
         lotteries[currentLotteryId].isActive == false,
-      "current lottery must be active or minting period must be closed"
+      "Lottery: current lottery must be active or minting period must be closed"
     );
     _;
   }
@@ -107,7 +105,7 @@ contract Lottery is Ownable {
   modifier isNewPlayerValid() {
     require(
       msg.value.min(MIN_DRAWING_INCREMENT) >= MIN_DRAWING_INCREMENT,
-      "msg value must be greater than min amount allowed"
+      "Lottery: msg value must be greater than min amount allowed"
     );
     _;
   }
@@ -135,7 +133,7 @@ contract Lottery is Ownable {
   constructor() {}
 
   /**
-   * A function for owner to update max players allowed criteria
+   * @dev A function for owner to update max players allowed criteria
    */
   function setMaxPlayersAllowed(uint256 _maxPlayersAllowed) external onlyOwner {
     maxPlayersAllowed = _maxPlayersAllowed;
@@ -150,7 +148,7 @@ contract Lottery is Ownable {
   }
 
   /**
-   * A function for owner to force update lottery to be cancelled
+   * @dev A function for owner to force update lottery to be cancelled
    * funds should be returned to players too
    */
   function cancelLottery() external onlyOwner {
@@ -160,7 +158,7 @@ contract Lottery is Ownable {
   }
 
   /**
-   * A function to initialize a lottery
+   * @dev A function to initialize a lottery
    * probably should also be onlyOwner
    */
   function initLottery(uint256 startTime, uint256 numHours)
@@ -173,7 +171,7 @@ contract Lottery is Ownable {
     if (numHours == 0) {
       numHours = NUMBER_OF_HOURS;
     }
-    uint256 endTime = startTime.add(numHours * 1 hours);
+    uint256 endTime = startTime + (numHours * 1 hours);
     lotteries[currentLotteryId] = LotteryStruct({
       lotteryId: currentLotteryId,
       startTime: startTime,
@@ -182,7 +180,7 @@ contract Lottery is Ownable {
       isCompleted: false,
       isCreated: true
     });
-    numLotteries = numLotteries.add(1);
+    numLotteries = numLotteries + (1);
     emit NewLottery(msg.sender, startTime, endTime);
   }
 
@@ -190,22 +188,22 @@ contract Lottery is Ownable {
    * a function for players to mint lottery tix
    */
   function mintLotteryTickets() public payable isNewPlayerValid {
-    uint256 numTicketsToMint = msg.value.div(MIN_DRAWING_INCREMENT);
+    uint256 numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
     require(numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
     // if player is "new" for current lottery, update the player lists
     if (players[msg.sender] == false) {
-      require(numActivePlayers.add(1) <= maxPlayersAllowed); // capped max # of players
+      require(numActivePlayers + (1) <= maxPlayersAllowed); // capped max # of players
       if (listOfPlayers.length > numActivePlayers) {
         listOfPlayers[numActivePlayers] = msg.sender; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
       } else {
         listOfPlayers.push(msg.sender); // otherwise append to array
       }
       players[msg.sender] = true;
-      numActivePlayers = numActivePlayers.add(1);
+      numActivePlayers = numActivePlayers + (1);
     }
-    tickets[msg.sender] = tickets[msg.sender].add(numTicketsToMint); // account for if user has already minted tix previously for this current lottery
-    prizeAmount = prizeAmount.add(msg.value); // update the pot size
-    numTotalTickets = numTotalTickets.add(numTicketsToMint); // update the total # of tickets minted
+    tickets[msg.sender] = tickets[msg.sender] + (numTicketsToMint); // account for if user has already minted tix previously for this current lottery
+    prizeAmount = prizeAmount + (msg.value); // update the pot size
+    numTotalTickets = numTotalTickets + (numTicketsToMint); // update the total # of tickets minted
     emit ticketsMinted(msg.sender, numTicketsToMint);
   }
 
@@ -282,7 +280,7 @@ contract Lottery is Ownable {
       TicketDistributionStruct memory newDistribution = TicketDistributionStruct({
         playerAddress: playerAddress,
         startIndex: ticketIndex,
-        endIndex: ticketIndex.add(numTickets).sub(1) // sub 1 to account for array indices starting from 0
+        endIndex: ticketIndex + (numTickets) - (1) // sub 1 to account for array indices starting from 0
       });
       // gas optimization - overwrite existing values; otherwise append
       if (ticketDistribution.length > i) {
@@ -292,7 +290,7 @@ contract Lottery is Ownable {
       }
 
       tickets[playerAddress] = 0; // reset player's tickets to 0 after they've been counted
-      ticketIndex = ticketIndex.add(numTickets);
+      ticketIndex = ticketIndex + (numTickets);
     }
   }
 
@@ -305,7 +303,7 @@ contract Lottery is Ownable {
     /* TASK: implement random drawing from 0 to numTotalTickets
     use chainlink https://docs.chain.link/docs/get-a-random-number/ to get random values
      */
-    uint256 randomTicketIndex = numTotalTickets.mul(3).div(4).sub(1); // placeholder for now. Generate true random number later
+    uint256 randomTicketIndex = (numTotalTickets * 3) / (4) - (1); // placeholder for now. Generate true random number later
     return randomTicketIndex;
   }
 
@@ -337,10 +335,10 @@ contract Lottery is Ownable {
     uint256 _rightIndex,
     uint256 _ticketIndexToFind
   ) private returns (uint256) {
-    uint256 searchIndex = _rightIndex.sub(_leftIndex).div(2).add(_leftIndex);
+    uint256 searchIndex = (_rightIndex - _leftIndex) / (2) + (_leftIndex);
 
     // counter
-    loopCount = loopCount.add(1);
+    loopCount = loopCount + (1);
     if (loopCount > maxLoops) {
       // emergency stop in case infinite loop due to unforeseen bug
       return numActivePlayers;
@@ -354,12 +352,12 @@ contract Lottery is Ownable {
       ticketDistribution[searchIndex].startIndex > _ticketIndexToFind
     ) {
       // go to left subarray
-      _rightIndex = searchIndex.sub(_leftIndex);
+      _rightIndex = searchIndex - (_leftIndex);
 
       return binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
     } else if (ticketDistribution[searchIndex].endIndex < _ticketIndexToFind) {
       // go to right subarray
-      _leftIndex = searchIndex.add(_leftIndex).add(1);
+      _leftIndex = searchIndex + (_leftIndex) + (1);
       return binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
     }
 
@@ -384,7 +382,7 @@ contract Lottery is Ownable {
       addr: address(0)
     });
 
-    currentLotteryId = currentLotteryId.add(1); // increment id counter
+    currentLotteryId = currentLotteryId + (1); // increment id counter
   }
 
   /* function to allow winner to withdraw prize
