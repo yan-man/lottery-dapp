@@ -90,7 +90,7 @@ For the demo, close the minting period by pressing the button `[Emergency] End M
 
 ### Lottery Drawing
 
-`Owner` can start the lottery drawing after the minting period has ended. In this `v0.1.0` demo, the winner is not randomly selected. **Rather, the winner is the participant with the ticket position at the 75th percentile of total ticket purchases.** See mechanics section for details.
+`Owner` can start the lottery drawing after the minting period has ended. In this `v0.1` demo, the winner is not randomly selected. **Rather, the winner is the participant with the ticket position at the 75th percentile of total ticket purchases.** See mechanics section for details.
 
 There are 2 transactions required to approve to complete the lottery drawing - (1) to find the winner, and (2) to deposit the prize amount to the winner's Pending Withdrawal. Winner info should be populated after successful transaction.
 
@@ -126,7 +126,7 @@ In future versions, winners' odds will be directly correlated to the proportion 
 
 See [Hardhat](https://hardhat.org/tutorial/testing-contracts.html) for more details on testing.
 
-Navigate to root directory, then start tests. There should be 17 passing tests. In `v0.1.0` these are mostly just tests on the happy path.
+Navigate to root directory, then start tests. There should be 17 passing tests. In `v0.1` these are mostly just tests on the happy path.
 
 ```sh
 $ npx hardhat test
@@ -150,9 +150,11 @@ Manage ticket distributions by storing the starting/ending ticket index correspo
 
 `Ownable` contract restricts some functions from non-Owner access.
 
-### SafeMath
+## Troubleshooting
 
-Utilize `SafeMath` to perform calculations on `uint256` types to prevent overflow.
+As described in the [Hardhat Github](https://github.com/NomicFoundation/hardhat-hackathon-boilerplate), you may see the following bug in your console. Simply reset your account and try again: Metamask -> Settings -> Advanced -> Reset Account.
+
+![nonce](./readme/nonce.png)
 
 ## Further
 
