@@ -11,13 +11,33 @@ import "hardhat/console.sol";
 contract Lottery is Ownable {
   using Math for uint256;
 
+  // Events
+  event NewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
+  event TicketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
+  // emit when lottery drawing happens; winner found
+  event WinnerFound(
+    uint256 lotteryId,
+    uint256 winningTicketIndex,
+    address winningAddress
+  );
+  // emit when lottery winnings deposited in pending withdrawals
+  event LotteryWinningsDeposited(
+    uint256 lotteryId,
+    address winningAddress,
+    uint256 amountDeposited
+  );
+  // emit when funds withdrawn by winner
+  event WinnerFundsWithdrawn(address winnerAddress, uint256 withdrawalAmount);
+  // emit when owner has changed max player param
+  event MaxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
+
   // State Variables
   struct LotteryStruct {
     uint256 lotteryId;
     uint256 startTime;
     uint256 endTime;
-    bool isActive; // minting tickets is allowed
-    bool isCompleted; // winner was found; winnings were deposited
+    bool isActive; // minting tickets is allowed. TASK: rename to "isMintingPeriodActive"?
+    bool isCompleted; // winner was found; winnings were deposited.
     bool isCreated; // is created
   }
   struct TicketDistributionStruct {
@@ -28,9 +48,9 @@ contract Lottery is Ownable {
   struct WinningTicketStruct {
     uint256 currentLotteryId;
     uint256 winningTicketIndex;
-    address addr;
+    address addr; // TASK: rename to "winningAddress"?
   }
-  /* TASK: rename MIN_DRAWING_INCREMENT to something more descriptive. Maybe TICKET_PRICE
+  /* TASK: rename to TICKET_PRICE? More human readable, makes more sense. Although it technically is the minimum increment.
    */
   uint256 public constant MIN_DRAWING_INCREMENT = 100000000000000; // 0.0001 ETH; min eth amount to enter lottery.
   uint256 public constant NUMBER_OF_HOURS = 168; // 1 week by default; configurable
@@ -60,7 +80,6 @@ contract Lottery is Ownable {
   // withdrawal design pattern
 
   // modifiers
-
   /* @dev check that new lottery is a valid implementation
   previous lottery must be inactive for new lottery to be saved
   for when new lottery will be saved
@@ -110,26 +129,6 @@ contract Lottery is Ownable {
     _;
   }
 
-  // Events
-  event NewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
-  event ticketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
-  // emit when lottery drawing happens; winner found
-  event triggerLotteryWinner(
-    uint256 lotteryId,
-    uint256 winningTicketIndex,
-    address winningAddress
-  );
-  // emit when lottery winnings deposited in pending withdrawals
-  event triggerLotteryWinningsDeposited(
-    uint256 lotteryId,
-    address winningAddress,
-    uint256 amountDeposited
-  );
-  // emit when funds withdrawn by winner
-  event withdrawalMade(address winnerAddress, uint256 withdrawalAmount);
-  // emit when owner has changed max player param
-  event maxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
-
   constructor() {}
 
   /**
@@ -137,11 +136,13 @@ contract Lottery is Ownable {
    */
   function setMaxPlayersAllowed(uint256 _maxPlayersAllowed) external onlyOwner {
     maxPlayersAllowed = _maxPlayersAllowed;
-    emit maxPlayersAllowedUpdated(maxPlayersAllowed);
+    emit MaxPlayersAllowedUpdated(maxPlayersAllowed);
   }
 
   /**
    * A function for owner to force update lottery status isActive to false
+   * public because it needs to be called internally when a Lottery is cancelled
+   * TASK: probably should rename this to something like "closeMintingPeriod".
    */
   function setLotteryInactive() public onlyOwner {
     lotteries[currentLotteryId].isActive = false;
@@ -150,6 +151,7 @@ contract Lottery is Ownable {
   /**
    * @dev A function for owner to force update lottery to be cancelled
    * funds should be returned to players too
+   *
    */
   function cancelLottery() external onlyOwner {
     setLotteryInactive();
@@ -204,7 +206,7 @@ contract Lottery is Ownable {
     tickets[msg.sender] = tickets[msg.sender] + (numTicketsToMint); // account for if user has already minted tix previously for this current lottery
     prizeAmount = prizeAmount + (msg.value); // update the pot size
     numTotalTickets = numTotalTickets + (numTicketsToMint); // update the total # of tickets minted
-    emit ticketsMinted(msg.sender, numTicketsToMint);
+    emit TicketsMinted(msg.sender, numTicketsToMint);
   }
 
   /**
@@ -222,7 +224,7 @@ contract Lottery is Ownable {
     winningTicket.winningTicketIndex = winningTicketIndex;
     findWinningAddress(winningTicketIndex); // via binary search
 
-    emit triggerLotteryWinner(
+    emit WinnerFound(
       currentLotteryId,
       winningTicket.winningTicketIndex,
       winningTicket.addr
@@ -239,7 +241,7 @@ contract Lottery is Ownable {
     lotteries[currentLotteryId].isCompleted = true;
     winningTickets[currentLotteryId] = winningTicket;
     // emit before resetting lottery so vars still valid
-    emit triggerLotteryWinningsDeposited(
+    emit LotteryWinningsDeposited(
       currentLotteryId,
       winningTicket.addr,
       pendingWithdrawals[currentLotteryId][winningTicket.addr]
@@ -397,6 +399,6 @@ contract Lottery is Ownable {
     uint256 withdrawalAmount = pendingWithdrawals[lotteryId][msg.sender];
     pendingWithdrawals[lotteryId][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
     payable(msg.sender).transfer(withdrawalAmount); // must explicitly set payable address
-    emit withdrawalMade(msg.sender, withdrawalAmount);
+    emit WinnerFundsWithdrawn(msg.sender, withdrawalAmount);
   }
 }
