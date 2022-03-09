@@ -102,6 +102,10 @@ The winner can withdraw their winnings. You must be signed into the winner's acc
 
 <img src="./readme/withdraw.gif" height="400"/>
 
+## Smart Contract
+
+### State Changing Functions
+
 ### Notes
 
 Demo is only supported for the first lottery run. After lottery drawing has occurred and winner has withdrawn funds, re-deploy the contract and restart the front end to try again.
