@@ -160,6 +160,10 @@ As described in the [Hardhat Github](https://github.com/NomicFoundation/hardhat-
 
 ![nonce](./readme/nonce.png)
 
+If you encounter the following error make sure you're on npm v16: `nvm use 16`
+
+![nvm16](./readme/nvm16.png)
+
 ## Further
 
 ### `Lottery.sol`
