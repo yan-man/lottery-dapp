@@ -102,6 +102,10 @@ The winner can withdraw their winnings. You must be signed into the winner's acc
 
 <img src="./readme/withdraw.gif" height="400"/>
 
+## Smart Contract
+
+### State Changing Functions
+
 ### Notes
 
 Demo is only supported for the first lottery run. After lottery drawing has occurred and winner has withdrawn funds, re-deploy the contract and restart the front end to try again.
@@ -155,6 +159,10 @@ Manage ticket distributions by storing the starting/ending ticket index correspo
 As described in the [Hardhat Github](https://github.com/NomicFoundation/hardhat-hackathon-boilerplate), you may see the following bug in your console. Simply reset your account and try again: Metamask -> Settings -> Advanced -> Reset Account.
 
 ![nonce](./readme/nonce.png)
+
+If you encounter the following error make sure you're on npm v16: `nvm use 16`
+
+![nvm16](./readme/nvm16.png)
 
 ## Further
 

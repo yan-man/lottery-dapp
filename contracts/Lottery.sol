@@ -11,13 +11,33 @@ import "hardhat/console.sol";
 contract Lottery is Ownable {
   using Math for uint256;
 
+  // Events
+  event NewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
+  event TicketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
+  // emit when lottery drawing happens; winner found
+  event WinnerFound(
+    uint256 lotteryId,
+    uint256 winningTicketIndex,
+    address winningAddress
+  );
+  // emit when lottery winnings deposited in pending withdrawals
+  event LotteryWinningsDeposited(
+    uint256 lotteryId,
+    address winningAddress,
+    uint256 amountDeposited
+  );
+  // emit when funds withdrawn by winner
+  event WinnerFundsWithdrawn(address winnerAddress, uint256 withdrawalAmount);
+  // emit when owner has changed max player param
+  event MaxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
+
   // State Variables
   struct LotteryStruct {
     uint256 lotteryId;
     uint256 startTime;
     uint256 endTime;
-    bool isActive; // minting tickets is allowed
-    bool isCompleted; // winner was found; winnings were deposited
+    bool isActive; // minting tickets is allowed. TASK: rename to "isMintingPeriodActive"?
+    bool isCompleted; // winner was found; winnings were deposited.
     bool isCreated; // is created
   }
   struct TicketDistributionStruct {
@@ -28,9 +48,9 @@ contract Lottery is Ownable {
   struct WinningTicketStruct {
     uint256 currentLotteryId;
     uint256 winningTicketIndex;
-    address addr;
+    address addr; // TASK: rename to "winningAddress"?
   }
-  /* TASK: rename MIN_DRAWING_INCREMENT to something more descriptive. Maybe TICKET_PRICE
+  /* TASK: rename to TICKET_PRICE? More human readable, makes more sense. Although it technically is the minimum increment.
    */
   uint256 public constant MIN_DRAWING_INCREMENT = 100000000000000; // 0.0001 ETH; min eth amount to enter lottery.
   uint256 public constant NUMBER_OF_HOURS = 168; // 1 week by default; configurable
@@ -60,7 +80,6 @@ contract Lottery is Ownable {
   // withdrawal design pattern
 
   // modifiers
-
   /* @dev check that new lottery is a valid implementation
   previous lottery must be inactive for new lottery to be saved
   for when new lottery will be saved
@@ -110,56 +129,45 @@ contract Lottery is Ownable {
     _;
   }
 
-  // Events
-  event NewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
-  event ticketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
-  // emit when lottery drawing happens; winner found
-  event triggerLotteryWinner(
-    uint256 lotteryId,
-    uint256 winningTicketIndex,
-    address winningAddress
-  );
-  // emit when lottery winnings deposited in pending withdrawals
-  event triggerLotteryWinningsDeposited(
-    uint256 lotteryId,
-    address winningAddress,
-    uint256 amountDeposited
-  );
-  // emit when funds withdrawn by winner
-  event withdrawalMade(address winnerAddress, uint256 withdrawalAmount);
-  // emit when owner has changed max player param
-  event maxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
-
   constructor() {}
 
-  /**
+  /*
+   * @title setMaxPlayersAllowed
    * @dev A function for owner to update max players allowed criteria
+   * @param uint256 _maxPlayersAllowed new max players value to set
    */
   function setMaxPlayersAllowed(uint256 _maxPlayersAllowed) external onlyOwner {
     maxPlayersAllowed = _maxPlayersAllowed;
-    emit maxPlayersAllowedUpdated(maxPlayersAllowed);
+    emit MaxPlayersAllowedUpdated(maxPlayersAllowed);
   }
 
-  /**
-   * A function for owner to force update lottery status isActive to false
+  /*
+   * @title setLotteryInactive
+   * @dev A function for owner to force update lottery status isActive to false
+   * public because it needs to be called internally when a Lottery is cancelled
+   * TASK: probably should rename this to something like "closeMintingPeriod".
    */
   function setLotteryInactive() public onlyOwner {
     lotteries[currentLotteryId].isActive = false;
   }
 
-  /**
+  /*
+   * @title cancelLottery
    * @dev A function for owner to force update lottery to be cancelled
    * funds should be returned to players too
    */
   function cancelLottery() external onlyOwner {
     setLotteryInactive();
-    resetLottery();
+    _resetLottery();
     // TASK: implement refund funds to users
   }
 
-  /**
+  /*
+   * @title initLottery
    * @dev A function to initialize a lottery
    * probably should also be onlyOwner
+   * @param uint256 startTime: start of minting period, unixtime
+   * @param uint256 numHours: in hours, how long mint period will last
    */
   function initLottery(uint256 startTime, uint256 numHours)
     external
@@ -184,10 +192,11 @@ contract Lottery is Ownable {
     emit NewLottery(msg.sender, startTime, endTime);
   }
 
-  /**
-   * a function for players to mint lottery tix
+  /*
+   * @title mintLotteryTickets
+   * @dev a function for players to mint lottery tix
    */
-  function mintLotteryTickets() public payable isNewPlayerValid {
+  function mintLotteryTickets() external payable isNewPlayerValid {
     uint256 numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
     require(numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
     // if player is "new" for current lottery, update the player lists
@@ -204,33 +213,40 @@ contract Lottery is Ownable {
     tickets[msg.sender] = tickets[msg.sender] + (numTicketsToMint); // account for if user has already minted tix previously for this current lottery
     prizeAmount = prizeAmount + (msg.value); // update the pot size
     numTotalTickets = numTotalTickets + (numTicketsToMint); // update the total # of tickets minted
-    emit ticketsMinted(msg.sender, numTicketsToMint);
+    emit TicketsMinted(msg.sender, numTicketsToMint);
   }
 
-  /**
-   * a function for owner to trigger lottery drawing
+  /*
+   * @title triggerLotteryDrawing
+   * @dev a function for owner to trigger lottery drawing
    */
-  function triggerLotteryDrawing() public isLotteryMintingCompleted onlyOwner {
+  function triggerLotteryDrawing()
+    external
+    isLotteryMintingCompleted
+    onlyOwner
+  {
     // console.log("triggerLotteryDrawing");
     prizes[currentLotteryId] = prizeAmount; // keep track of prize amts for each of the previous lotteries
 
-    playerTicketDistribution(); // create the distribution to get ticket indexes for each user
+    _playerTicketDistribution(); // create the distribution to get ticket indexes for each user
     // can't be done a priori bc of potential multiple mints per user
-    uint256 winningTicketIndex = performRandomizedDrawing();
+    uint256 winningTicketIndex = _performRandomizedDrawing();
     // initialize what we can first
     winningTicket.currentLotteryId = currentLotteryId;
     winningTicket.winningTicketIndex = winningTicketIndex;
     findWinningAddress(winningTicketIndex); // via binary search
 
-    emit triggerLotteryWinner(
+    emit WinnerFound(
       currentLotteryId,
       winningTicket.winningTicketIndex,
       winningTicket.addr
     );
   }
 
-  /* function to deposit winnings for user withdrawal pattern
-  then reset lottery params for new one to be created
+  /*
+   * @title triggerDepositWinnings // TASK: rename to maybe depositWinnings
+   * @dev function to deposit winnings for user withdrawal pattern
+   * then reset lottery params for new one to be created
    */
   function triggerDepositWinnings() public {
     // console.log("triggerDepositWinnings");
@@ -239,15 +255,17 @@ contract Lottery is Ownable {
     lotteries[currentLotteryId].isCompleted = true;
     winningTickets[currentLotteryId] = winningTicket;
     // emit before resetting lottery so vars still valid
-    emit triggerLotteryWinningsDeposited(
+    emit LotteryWinningsDeposited(
       currentLotteryId,
       winningTicket.addr,
       pendingWithdrawals[currentLotteryId][winningTicket.addr]
     );
-    resetLottery();
+    _resetLottery();
   }
 
-  /* getter function for ticketDistribution bc its a struct
+  /*
+   * @title getTicketDistribution
+   * @dev getter function for ticketDistribution bc its a struct
    */
   function getTicketDistribution(uint256 playerIndex)
     public
@@ -265,13 +283,15 @@ contract Lottery is Ownable {
     );
   }
 
-  /* function to handle creating the ticket distribution
-  if 1) player1 buys 10 tix, then 2) player2 buys 5 tix, and then 3) player1 buys 5 more
-  player1's ticket indices will be 0-14; player2's from 15-19
-  this is why ticketDistribution cannot be determined until minting period is closed
+  /*
+   * @title _playerTicketDistribution
+   * @dev function to handle creating the ticket distribution
+   * if 1) player1 buys 10 tix, then 2) player2 buys 5 tix, and then 3) player1 buys 5 more
+   * player1's ticket indices will be 0-14; player2's from 15-19
+   * this is why ticketDistribution cannot be determined until minting period is closed
    */
-  function playerTicketDistribution() private {
-    // console.log("playerTicketDistribution");
+  function _playerTicketDistribution() private {
+    // console.log("_playerTicketDistribution");
     uint256 ticketIndex = 0; // counter within loop
     for (uint256 i = ticketIndex; i < numActivePlayers; i++) {
       address playerAddress = listOfPlayers[i];
@@ -294,12 +314,13 @@ contract Lottery is Ownable {
     }
   }
 
-  /**
-   * function to generate random winning ticket index. Still need to find corresponding user afterwards. 
-   v0.1.0 isn't randomized (for testing)
+  /*
+   * @title _performRandomizedDrawing
+   * @dev function to generate random winning ticket index. Still need to find corresponding user afterwards.
+   * v0.1 isn't randomized (for testing)
    */
-  function performRandomizedDrawing() private view returns (uint256) {
-    // console.log("performRandomizedDrawing");
+  function _performRandomizedDrawing() private view returns (uint256) {
+    // console.log("_performRandomizedDrawing");
     /* TASK: implement random drawing from 0 to numTotalTickets
     use chainlink https://docs.chain.link/docs/get-a-random-number/ to get random values
      */
@@ -307,8 +328,12 @@ contract Lottery is Ownable {
     return randomTicketIndex;
   }
 
-  /* function to find winning player address corresponding to winning ticket index
-  calls binary search
+  /*
+   * @title findWinningAddress
+   * @dev function to find winning player address corresponding to winning ticket index
+   * calls binary search
+   * @param uint256 _winningTicketIndex: ticket index selected as winner.
+   * Search for this within the ticket distribution to find corresponding Player
    */
   function findWinningAddress(uint256 _winningTicketIndex) public {
     // console.log("findWinningAddress");
@@ -317,7 +342,7 @@ contract Lottery is Ownable {
       winningTicket.addr = ticketDistribution[0].playerAddress;
     } else {
       // do binary search on ticketDistribution array to find winner
-      uint256 winningPlayerIndex = binarySearch(
+      uint256 winningPlayerIndex = _binarySearch(
         0,
         numActivePlayers - 1,
         _winningTicketIndex
@@ -327,10 +352,15 @@ contract Lottery is Ownable {
     }
   }
 
-  /* function implementing binary search on ticket distribution var
-  recursive function
+  /*
+   * @title _binarySearch
+   * @dev function implementing binary search on ticket distribution var
+   * recursive function
+   * @param uint256 _leftIndex initially 0
+   * @param uint256 _rightIndex initially max ind, ie array.length - 1
+   * @param uint256 _ticketIndexToFind to search for
    */
-  function binarySearch(
+  function _binarySearch(
     uint256 _leftIndex,
     uint256 _rightIndex,
     uint256 _ticketIndexToFind
@@ -343,6 +373,7 @@ contract Lottery is Ownable {
       // emergency stop in case infinite loop due to unforeseen bug
       return numActivePlayers;
     }
+
     if (
       ticketDistribution[searchIndex].startIndex <= _ticketIndexToFind &&
       ticketDistribution[searchIndex].endIndex >= _ticketIndexToFind
@@ -354,11 +385,11 @@ contract Lottery is Ownable {
       // go to left subarray
       _rightIndex = searchIndex - (_leftIndex);
 
-      return binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
+      return _binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
     } else if (ticketDistribution[searchIndex].endIndex < _ticketIndexToFind) {
       // go to right subarray
       _leftIndex = searchIndex + (_leftIndex) + (1);
-      return binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
+      return _binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
     }
 
     // if nothing found (bug), return an impossible player index
@@ -366,11 +397,13 @@ contract Lottery is Ownable {
     return numActivePlayers;
   }
 
-  /** function to reset lottery by setting state vars to defaults
-  don't delete if possible, as it requires lots of gas
+  /*
+   * @title _resetLottery
+   * @dev function to reset lottery by setting state vars to defaults
+   * don't delete if possible, as it requires lots of gas
    */
-  function resetLottery() private {
-    // console.log("resetLottery");
+  function _resetLottery() private {
+    // console.log("_resetLottery");
 
     numTotalTickets = 0;
     numActivePlayers = 0;
@@ -385,8 +418,11 @@ contract Lottery is Ownable {
     currentLotteryId = currentLotteryId + (1); // increment id counter
   }
 
-  /* function to allow winner to withdraw prize
-  implement withdrawal pattern
+  /*
+   * @title withdraw
+   * @dev function to allow winner to withdraw prize
+   * implement withdrawal pattern
+   * @param uint256 lotteryId to minimize the search requirement
    */
   function withdraw(uint256 lotteryId) external payable {
     // console.log("withdraw");
@@ -397,6 +433,6 @@ contract Lottery is Ownable {
     uint256 withdrawalAmount = pendingWithdrawals[lotteryId][msg.sender];
     pendingWithdrawals[lotteryId][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
     payable(msg.sender).transfer(withdrawalAmount); // must explicitly set payable address
-    emit withdrawalMade(msg.sender, withdrawalAmount);
+    emit WinnerFundsWithdrawn(msg.sender, withdrawalAmount);
   }
 }

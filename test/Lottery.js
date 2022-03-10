@@ -391,7 +391,7 @@ describe("Lottery contract", function () {
                       expectedMinAmountInWei
                     );
                   });
-                  it("*Happy Path: Should allow winner to withdarw", async function () {
+                  it("*Happy Path: Should allow winner to withdraw", async function () {
                     // winner should withdraw winnings
 
                     const expectedWinningAddr = addrs.filter((addr) => {
