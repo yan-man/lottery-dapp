@@ -36,7 +36,7 @@ contract Lottery is Ownable {
     uint256 lotteryId;
     uint256 startTime;
     uint256 endTime;
-    bool isActive; // minting tickets is allowed. TASK: rename to "isMintingPeriodActive"?
+    bool isActive; // minting tickets is allowed. @TODO: rename to "isMintingPeriodActive"?
     bool isCompleted; // winner was found; winnings were deposited.
     bool isCreated; // is created
   }
@@ -48,9 +48,9 @@ contract Lottery is Ownable {
   struct WinningTicketStruct {
     uint256 currentLotteryId;
     uint256 winningTicketIndex;
-    address addr; // TASK: rename to "winningAddress"?
+    address addr; // @TODO: rename to "winningAddress"?
   }
-  /* TASK: rename to TICKET_PRICE? More human readable, makes more sense. Although it technically is the minimum increment.
+  /* @TODO: rename to TICKET_PRICE? More human readable, makes more sense. Although it technically is the minimum increment.
    */
   uint256 public constant MIN_DRAWING_INCREMENT = 100000000000000; // 0.0001 ETH; min eth amount to enter lottery.
   uint256 public constant NUMBER_OF_HOURS = 168; // 1 week by default; configurable
@@ -145,7 +145,7 @@ contract Lottery is Ownable {
    * @title setLotteryInactive
    * @dev A function for owner to force update lottery status isActive to false
    * public because it needs to be called internally when a Lottery is cancelled
-   * TASK: probably should rename this to something like "closeMintingPeriod".
+   * @TODO: probably should rename this to something like "closeMintingPeriod".
    */
   function setLotteryInactive() public onlyOwner {
     lotteries[currentLotteryId].isActive = false;
@@ -159,7 +159,7 @@ contract Lottery is Ownable {
   function cancelLottery() external onlyOwner {
     setLotteryInactive();
     _resetLottery();
-    // TASK: implement refund funds to users
+    // @TODO: implement refund funds to users
   }
 
   /*
@@ -172,7 +172,7 @@ contract Lottery is Ownable {
   function initLottery(uint256 startTime, uint256 numHours)
     external
     isNewLotteryValid(startTime)
-  // TASK: add onlyOwner and re-test
+  // @TODO: add onlyOwner and re-test
   {
     // basically default value
     // if set to 0, default to explicit default number of days
@@ -244,7 +244,7 @@ contract Lottery is Ownable {
   }
 
   /*
-   * @title triggerDepositWinnings // TASK: rename to maybe depositWinnings
+   * @title triggerDepositWinnings // @TODO: rename to maybe depositWinnings
    * @dev function to deposit winnings for user withdrawal pattern
    * then reset lottery params for new one to be created
    */
@@ -321,7 +321,7 @@ contract Lottery is Ownable {
    */
   function _performRandomizedDrawing() private view returns (uint256) {
     // console.log("_performRandomizedDrawing");
-    /* TASK: implement random drawing from 0 to numTotalTickets
+    /* @TODO: implement random drawing from 0 to numTotalTickets
     use chainlink https://docs.chain.link/docs/get-a-random-number/ to get random values
      */
     uint256 randomTicketIndex = (numTotalTickets * 3) / (4) - (1); // placeholder for now. Generate true random number later
