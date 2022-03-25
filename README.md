@@ -74,7 +74,7 @@ You can switch accounts to any `Player` (including `Owner`) via Metamask to mint
 
 <img src="./readme/mint-1.gif" height="400"/>
 
-Enter some amount of eth and it should calculate how many tickets you are able to mint, as well as your odds of winning the lottery, which is based on the proportion of tickets you have minted relative to the total. For example, if there are 3,000 total tickets and you mint 1,000 more, you would have a 25% chance of winning.
+Enter some amount of eth and it should calculate how many tickets you are able to mint, as well as your odds of winning the lottery, which is based on the proportion of tickets you have minted relative to the total. For example, if there are 3,000 total tickets and you mint 1,000 more, you would have a 25% chance of winning (ie, you own 1,000 of a total of 4,000 outstanding tickets).
 
 <img src="./readme/mint-2.gif" height="400"/>
 
@@ -90,7 +90,7 @@ For the demo, close the minting period by pressing the button `[Emergency] End M
 
 ### Lottery Drawing
 
-`Owner` can start the lottery drawing after the minting period has ended. In this `v0.1` demo, the winner is not randomly selected. **Rather, the winner is the participant with the ticket position at the 75th percentile of total ticket purchases.** See mechanics section for details.
+`Owner` can start the lottery drawing after the minting period has ended. In this `v0.1` demo, the winner is randomly selected via a naive random algorithm based on blocknumber. See mechanics section for details.
 
 There are 2 transactions required to approve to complete the lottery drawing - (1) to find the winner, and (2) to deposit the prize amount to the winner's Pending Withdrawal. Winner info should be populated after successful transaction.
 
@@ -106,9 +106,7 @@ The winner can withdraw their winnings. You must be signed into the winner's acc
 
 ### State Changing Functions
 
-### Notes
-
-Demo is only supported for the first lottery run. After lottery drawing has occurred and winner has withdrawn funds, re-deploy the contract and restart the front end to try again.
+**Note**: Demo is only supported for the first lottery run. After lottery drawing has occurred and winner has withdrawn funds, re-deploy the contract and restart the front end to try again.
 
 ## Mechanics
 
@@ -118,13 +116,13 @@ By default, the lottery minting period will be open for 1 hour. Lottery drawings
 
 ### How is the Winner Determined?
 
-In `v0.1`, the winner is not randomly selected (future implementations will be - randomness requires integration of off-chain oracles). It is the participant with the ticket position at the 75th percentile of total ticket purchases. Ticket distributions are determined after minting period has closed, and are in ascending order of initial purchase.
+In `v0.1.5` onwards, the winner is randomly selected utilizing a naive algorithm based on block number (future implementations from `v0.2` onwards will be cleaner - randomness will integrate off-chain oracles via [Chainlink VRF](https://docs.chain.link/docs/chainlink-vrf/)). See `Random.sol` custom library for more details. Ticket distributions are determined after minting period has closed, and are in ascending order of initial purchase.
+
+Each player's odds of winning are determined by the percentage of outstanding tickets that they own.
 
 For example, if `Player1` buys 20 tickets (1) and `Player2` buys 70 tickets (2), then `Player1` buys another 10 tickets (3), there would be a total of 100 tickets. `Player1`'s ticket positions would be from 1-30, and `Player2`'s from 31-100.
 
-Because the winner is determined at the 75th percentile, that would mean the player with the ticket position at 75 would win, ie `Player2`.
-
-In future versions, winners' odds will be directly correlated to the proportion of outstanding tickets sold for that lottery. For example, `Player1` in the example above would have a 30% chance of winning (they hold 30 tickets out of the total of 100 tickets sold), and `Player2` would have a 70% chance of winning (they hold 70 tickets out of the total of 100).
+The winners' odds are directly correlated to the proportion of outstanding tickets they own for that lottery. `Player1` in the example above would have a 30% chance of winning (they hold 30 tickets out of the total of 100 tickets sold), and `Player2` would have a 70% chance of winning (they hold 70 tickets out of the total of 100).
 
 ## Smart Contract Testing
 
@@ -175,6 +173,10 @@ If you encounter the following error make sure you're on npm v16: `nvm use 16`
 - deploy on test net: maybe Rinkeby to handle the random number generator dev tool
 - currently the process of performing a lottery drawing was split into 2 functions - `triggerLotteryDrawing` and `triggerDepositWinnings` just in case the binary search took too much gas, rendering the winnign funds un-deposited. Maybe these functions can be combined together with no loss in fidelity.
 - create refund functionality for when previous lotteries are cancelled without determining a winner.
+
+### `Random.sol`
+
+- implement [Chainlink VRF](https://docs.chain.link/docs/chainlink-vrf/) for verifiable random number generation
 
 ### Front End
 
