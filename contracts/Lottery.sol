@@ -85,7 +85,7 @@ contract Lottery is Ownable {
   previous lottery must be inactive for new lottery to be saved
   for when new lottery will be saved
    */
-    modifier isNewLotteryValid(uint256 startTime) {
+    modifier isNewLotteryValid() {
         // active lottery
         LotteryStruct memory lottery = lotteries[currentLotteryId];
         require(
@@ -137,11 +137,11 @@ contract Lottery is Ownable {
      * @dev A function for owner to update max players allowed criteria
      * @param uint256 _maxPlayersAllowed new max players value to set
      */
-    function setMaxPlayersAllowed(uint256 _maxPlayersAllowed)
+    function setMaxPlayersAllowed(uint256 maxPlayersAllowed_)
         external
         onlyOwner
     {
-        maxPlayersAllowed = _maxPlayersAllowed;
+        maxPlayersAllowed = maxPlayersAllowed_;
         emit MaxPlayersAllowedUpdated(maxPlayersAllowed);
     }
 
@@ -170,30 +170,30 @@ contract Lottery is Ownable {
      * @title initLottery
      * @dev A function to initialize a lottery
      * probably should also be onlyOwner
-     * @param uint256 startTime: start of minting period, unixtime
+     * @param uint256 startTime_: start of minting period, unixtime
      * @param uint256 numHours: in hours, how long mint period will last
      */
-    function initLottery(uint256 startTime, uint256 numHours)
+    function initLottery(uint256 startTime_, uint256 numHours_)
         external
-        isNewLotteryValid(startTime)
+        isNewLotteryValid
     // TASK: add onlyOwner and re-test
     {
         // basically default value
         // if set to 0, default to explicit default number of days
-        if (numHours == 0) {
-            numHours = NUMBER_OF_HOURS;
+        if (numHours_ == 0) {
+            numHours_ = NUMBER_OF_HOURS;
         }
-        uint256 endTime = startTime + (numHours * 1 hours);
+        uint256 endTime = startTime_ + (numHours_ * 1 hours);
         lotteries[currentLotteryId] = LotteryStruct({
             lotteryId: currentLotteryId,
-            startTime: startTime,
+            startTime: startTime_,
             endTime: endTime,
             isActive: true,
             isCompleted: false,
             isCreated: true
         });
-        numLotteries = numLotteries + (1);
-        emit NewLottery(msg.sender, startTime, endTime);
+        numLotteries = numLotteries + 1;
+        emit NewLottery(msg.sender, startTime_, endTime);
     }
 
     /*
@@ -271,7 +271,7 @@ contract Lottery is Ownable {
      * @title getTicketDistribution
      * @dev getter function for ticketDistribution bc its a struct
      */
-    function getTicketDistribution(uint256 playerIndex)
+    function getTicketDistribution(uint256 playerIndex_)
         public
         view
         returns (
@@ -281,9 +281,9 @@ contract Lottery is Ownable {
         )
     {
         return (
-            ticketDistribution[playerIndex].playerAddress,
-            ticketDistribution[playerIndex].startIndex,
-            ticketDistribution[playerIndex].endIndex
+            ticketDistribution[playerIndex_].playerAddress,
+            ticketDistribution[playerIndex_].startIndex,
+            ticketDistribution[playerIndex_].endIndex
         );
     }
 
@@ -335,10 +335,10 @@ contract Lottery is Ownable {
      * @title findWinningAddress
      * @dev function to find winning player address corresponding to winning ticket index
      * calls binary search
-     * @param uint256 _winningTicketIndex: ticket index selected as winner.
+     * @param uint256 winningTicketIndex_: ticket index selected as winner.
      * Search for this within the ticket distribution to find corresponding Player
      */
-    function findWinningAddress(uint256 _winningTicketIndex) public {
+    function findWinningAddress(uint256 winningTicketIndex_) public {
         // console.log("findWinningAddress");
         // trivial case, no search required
         if (numActivePlayers == 1) {
@@ -348,7 +348,7 @@ contract Lottery is Ownable {
             uint256 winningPlayerIndex = _binarySearch(
                 0,
                 numActivePlayers - 1,
-                _winningTicketIndex
+                winningTicketIndex_
             );
             require(winningPlayerIndex < numActivePlayers); // sanity check
             winningTicket.addr = ticketDistribution[winningPlayerIndex]
@@ -360,16 +360,16 @@ contract Lottery is Ownable {
      * @title _binarySearch
      * @dev function implementing binary search on ticket distribution var
      * recursive function
-     * @param uint256 _leftIndex initially 0
-     * @param uint256 _rightIndex initially max ind, ie array.length - 1
-     * @param uint256 _ticketIndexToFind to search for
+     * @param uint256 leftIndex_ initially 0
+     * @param uint256 rightIndex_ initially max ind, ie array.length - 1
+     * @param uint256 ticketIndexToFind_ to search for
      */
     function _binarySearch(
-        uint256 _leftIndex,
-        uint256 _rightIndex,
-        uint256 _ticketIndexToFind
+        uint256 leftIndex_,
+        uint256 rightIndex_,
+        uint256 ticketIndexToFind_
     ) private returns (uint256) {
-        uint256 searchIndex = (_rightIndex - _leftIndex) / (2) + (_leftIndex);
+        uint256 searchIndex = (rightIndex_ - leftIndex_) / (2) + (leftIndex_);
 
         // counter
         loopCount = loopCount + (1);
@@ -379,23 +379,23 @@ contract Lottery is Ownable {
         }
 
         if (
-            ticketDistribution[searchIndex].startIndex <= _ticketIndexToFind &&
-            ticketDistribution[searchIndex].endIndex >= _ticketIndexToFind
+            ticketDistribution[searchIndex].startIndex <= ticketIndexToFind_ &&
+            ticketDistribution[searchIndex].endIndex >= ticketIndexToFind_
         ) {
             return searchIndex;
         } else if (
-            ticketDistribution[searchIndex].startIndex > _ticketIndexToFind
+            ticketDistribution[searchIndex].startIndex > ticketIndexToFind_
         ) {
             // go to left subarray
-            _rightIndex = searchIndex - (_leftIndex);
+            rightIndex_ = searchIndex - (leftIndex_);
 
-            return _binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
+            return _binarySearch(leftIndex_, rightIndex_, ticketIndexToFind_);
         } else if (
-            ticketDistribution[searchIndex].endIndex < _ticketIndexToFind
+            ticketDistribution[searchIndex].endIndex < ticketIndexToFind_
         ) {
             // go to right subarray
-            _leftIndex = searchIndex + (_leftIndex) + (1);
-            return _binarySearch(_leftIndex, _rightIndex, _ticketIndexToFind);
+            leftIndex_ = searchIndex + (leftIndex_) + 1;
+            return _binarySearch(leftIndex_, rightIndex_, ticketIndexToFind_);
         }
 
         // if nothing found (bug), return an impossible player index
@@ -428,16 +428,16 @@ contract Lottery is Ownable {
      * @title withdraw
      * @dev function to allow winner to withdraw prize
      * implement withdrawal pattern
-     * @param uint256 lotteryId to minimize the search requirement
+     * @param uint256 lotteryId_ to minimize the search requirement
      */
-    function withdraw(uint256 lotteryId) external payable {
+    function withdraw(uint256 lotteryId_) external payable {
         // console.log("withdraw");
         require(
-            pendingWithdrawals[lotteryId][msg.sender] > 0,
+            pendingWithdrawals[lotteryId_][msg.sender] > 0,
             "require pending withdrawals to have funds for given user"
         );
-        uint256 withdrawalAmount = pendingWithdrawals[lotteryId][msg.sender];
-        pendingWithdrawals[lotteryId][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
+        uint256 withdrawalAmount = pendingWithdrawals[lotteryId_][msg.sender];
+        pendingWithdrawals[lotteryId_][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
         payable(msg.sender).transfer(withdrawalAmount); // must explicitly set payable address
         emit WinnerFundsWithdrawn(msg.sender, withdrawalAmount);
     }
