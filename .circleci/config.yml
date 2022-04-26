@@ -11,6 +11,7 @@ commands:
           install-yarn: false
           node-version: "16.14.2"
       - run: node --version
+      - run: npm i
       - run: npx hardhat test
 executors:
   docker-executor:
