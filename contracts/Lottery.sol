@@ -376,29 +376,29 @@ contract Lottery is Ownable {
         uint256 rightIndex_,
         uint256 ticketIndexToFind_
     ) private returns (uint256) {
-        uint256 searchIndex = (rightIndex_ - leftIndex_) / (2) + (leftIndex_);
-
+        uint256 _searchIndex = (rightIndex_ - leftIndex_) / (2) + (leftIndex_);
+        uint _loopCount = loopCount;
         // counter
-        loopCount = loopCount + (1);
-        if (loopCount > maxLoops) {
+        loopCount = _loopCount + 1;
+        if (_loopCount + 1 > maxLoops) {
             // emergency stop in case infinite loop due to unforeseen bug
             return numActivePlayers;
         }
 
         if (
-            ticketDistribution[searchIndex].startIndex <= ticketIndexToFind_ &&
-            ticketDistribution[searchIndex].endIndex >= ticketIndexToFind_
+            ticketDistribution[_searchIndex].startIndex <= ticketIndexToFind_ &&
+            ticketDistribution[_searchIndex].endIndex >= ticketIndexToFind_
         ) {
-            return searchIndex;
+            return _searchIndex;
         } else if (
-            ticketDistribution[searchIndex].startIndex > ticketIndexToFind_
+            ticketDistribution[_searchIndex].startIndex > ticketIndexToFind_
         ) {
             // go to left subarray
-            rightIndex_ = searchIndex - (leftIndex_);
+            rightIndex_ = _searchIndex - (leftIndex_);
 
             return _binarySearch(leftIndex_, rightIndex_, ticketIndexToFind_);
         } else if (
-            ticketDistribution[searchIndex].endIndex < ticketIndexToFind_
+            ticketDistribution[_searchIndex].endIndex < ticketIndexToFind_
         ) {
             // go to right subarray
             leftIndex_ = searchIndex + (leftIndex_) + 1;
@@ -439,13 +439,15 @@ contract Lottery is Ownable {
      */
     function withdraw(uint256 lotteryId_) external payable {
         // console.log("withdraw");
+        uint256 _pendingCurrentUserWithdrawal = pendingWithdrawals[lotteryId_][
+            msg.sender
+        ];
         require(
-            pendingWithdrawals[lotteryId_][msg.sender] > 0,
+            _pendingCurrentUserWithdrawal > 0,
             "require pending withdrawals to have funds for given user"
         );
-        uint256 withdrawalAmount = pendingWithdrawals[lotteryId_][msg.sender];
         pendingWithdrawals[lotteryId_][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
-        payable(msg.sender).transfer(withdrawalAmount); // must explicitly set payable address
-        emit WinnerFundsWithdrawn(msg.sender, withdrawalAmount);
+        payable(msg.sender).transfer(_pendingCurrentUserWithdrawal); // must explicitly set payable address
+        emit WinnerFundsWithdrawn(msg.sender, _pendingCurrentUserWithdrawal);
     }
 }
