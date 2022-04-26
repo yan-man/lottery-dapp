@@ -1,6 +1,6 @@
 {
   "name": "degen-lotto-frontend",
-  "version": "0.1.0",
+  "version": "0.1.7",
   "private": true,
   "dependencies": {
     "@fontsource/roboto": "^4.5.3",

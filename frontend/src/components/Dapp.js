@@ -130,6 +130,19 @@ export class Dapp extends React.Component {
                   </b>{" "}
                   to mint lottery tickets with.
                 </p>
+                {this.state.txBeingSent && (
+                  <WaitingForTransactionMessage
+                    txHash={this.state.txBeingSent}
+                  />
+                )}
+                {this.state.transactionError && (
+                  <TransactionErrorMessage
+                    message={this._getRpcErrorMessage(
+                      this.state.transactionError
+                    )}
+                    dismiss={() => this._dismissTransactionError()}
+                  />
+                )}
               </div>
             </div>
             {isOwner && (
@@ -298,14 +311,6 @@ export class Dapp extends React.Component {
     const winningTicket = await this._lottery.winningTickets(
       currentLotteryId.toNumber()
     );
-    // console.log(winningTicket.winningTicketIndex.toString());
-    // console.log(winningTicket);
-    // console.log(
-    //   await this._lottery.pendingWithdrawals(
-    //     currentLotteryId.toNumber(),
-    //     winningTicket.addr
-    //   )
-    // );
 
     const newState = {
       ...(await this._lottery.lotteries(currentLotteryId.toNumber())),
@@ -336,8 +341,29 @@ export class Dapp extends React.Component {
   _initLottery = async () => {
     console.log("init lottery");
     const unixtimeNow = Math.floor(Date.now() / 1000);
-    await this._lottery.initLottery(unixtimeNow, 1);
-    this._updateInfo();
+
+    try {
+      this._dismissTransactionError();
+
+      const tx = await this._lottery.initLottery(unixtimeNow, 1);
+      this._updateInfo();
+      this.setState({ txBeingSent: tx.hash });
+      const receipt = await tx.wait();
+
+      if (receipt.status === 0) {
+        throw new Error("Transaction failed");
+      }
+
+      await this._updateInfo();
+    } catch (error) {
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      this.setState({ txBeingSent: undefined });
+    }
   };
 
   _triggerLotteryDrawing = async () => {
