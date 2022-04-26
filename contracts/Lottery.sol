@@ -59,7 +59,7 @@ contract Lottery is Ownable {
 
     // max # loops allowed for binary search; to prevent some bugs causing infinite loops in binary search
     uint256 public maxLoops = 10;
-    uint256 loopCount = 0; // for binary search
+    uint256 private loopCount = 0; // for binary search
 
     uint256 public currentLotteryId = 0;
     uint256 public numLotteries = 0;
@@ -82,9 +82,9 @@ contract Lottery is Ownable {
 
     // modifiers
     /* @dev check that new lottery is a valid implementation
-  previous lottery must be inactive for new lottery to be saved
-  for when new lottery will be saved
-   */
+    previous lottery must be inactive for new lottery to be saved
+    for when new lottery will be saved
+    */
     modifier isNewLotteryValid() {
         // active lottery
         LotteryStruct memory lottery = lotteries[currentLotteryId];
@@ -94,9 +94,10 @@ contract Lottery is Ownable {
         );
         _;
     }
+
     /* @dev check that minting period is still open
-  for when user tries to mint more tickets
-   */
+    for when user tries to mint more tickets
+    */
     modifier isLotteryMintingOpen() {
         require(
             lotteries[currentLotteryId].isActive == true &&
@@ -107,10 +108,10 @@ contract Lottery is Ownable {
         _;
     }
     /* @dev check that minting period is completed, and lottery drawing can begin
-  either:
-  1) minting period manually ended, ie lottery is inactive. Then drawing can begin immediately.
-  2) lottery minting period has ended organically, and lottery is still active at that point
-   */
+    either:
+    1) minting period manually ended, ie lottery is inactive. Then drawing can begin immediately.
+    2) lottery minting period has ended organically, and lottery is still active at that point
+    */
     modifier isLotteryMintingCompleted() {
         require(
             (lotteries[currentLotteryId].isActive == true &&
@@ -130,8 +131,6 @@ contract Lottery is Ownable {
         _;
     }
 
-    constructor() {}
-
     /*
      * @title setMaxPlayersAllowed
      * @dev A function for owner to update max players allowed criteria
@@ -144,6 +143,8 @@ contract Lottery is Ownable {
         maxPlayersAllowed = maxPlayersAllowed_;
         emit MaxPlayersAllowedUpdated(maxPlayersAllowed);
     }
+
+    // functions
 
     /*
      * @title setLotteryInactive
@@ -201,23 +202,27 @@ contract Lottery is Ownable {
      * @dev a function for players to mint lottery tix
      */
     function mintLotteryTickets() external payable isNewPlayerValid {
-        uint256 numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
-        require(numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
+        uint256 _numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
+        require(_numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
         // if player is "new" for current lottery, update the player lists
+
+        // memory var to conserve gas
+        uint _numActivePlayers = numActivePlayers;
+
         if (players[msg.sender] == false) {
-            require(numActivePlayers + (1) <= maxPlayersAllowed); // capped max # of players
-            if (listOfPlayers.length > numActivePlayers) {
-                listOfPlayers[numActivePlayers] = msg.sender; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
+            require(_numActivePlayers + 1 <= maxPlayersAllowed); // capped max # of players
+            if (listOfPlayers.length > _numActivePlayers) {
+                listOfPlayers[_numActivePlayers] = msg.sender; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
             } else {
                 listOfPlayers.push(msg.sender); // otherwise append to array
             }
             players[msg.sender] = true;
-            numActivePlayers = numActivePlayers + (1);
+            numActivePlayers = _numActivePlayers + 1;
         }
-        tickets[msg.sender] = tickets[msg.sender] + (numTicketsToMint); // account for if user has already minted tix previously for this current lottery
+        tickets[msg.sender] = tickets[msg.sender] + _numTicketsToMint; // account for if user has already minted tix previously for this current lottery
         prizeAmount = prizeAmount + (msg.value); // update the pot size
-        numTotalTickets = numTotalTickets + (numTicketsToMint); // update the total # of tickets minted
-        emit TicketsMinted(msg.sender, numTicketsToMint);
+        numTotalTickets = numTotalTickets + _numTicketsToMint; // update the total # of tickets minted
+        emit TicketsMinted(msg.sender, _numTicketsToMint);
     }
 
     /*
@@ -296,25 +301,26 @@ contract Lottery is Ownable {
      */
     function _playerTicketDistribution() private {
         // console.log("_playerTicketDistribution");
-        uint256 ticketIndex = 0; // counter within loop
-        for (uint256 i = ticketIndex; i < numActivePlayers; i++) {
-            address playerAddress = listOfPlayers[i];
-            uint256 numTickets = tickets[playerAddress];
+        uint _ticketDistributionLength = ticketDistribution.length; // so state var doesn't need to be invoked each iteration of loop
+        uint256 _ticketIndex = 0; // counter within loop
+        for (uint256 i = _ticketIndex; i < numActivePlayers; i++) {
+            address _playerAddress = listOfPlayers[i];
+            uint256 _numTickets = tickets[_playerAddress];
 
             TicketDistributionStruct memory newDistribution = TicketDistributionStruct({
-                playerAddress: playerAddress,
-                startIndex: ticketIndex,
-                endIndex: ticketIndex + (numTickets) - (1) // sub 1 to account for array indices starting from 0
+                playerAddress: _playerAddress,
+                startIndex: _ticketIndex,
+                endIndex: _ticketIndex + _numTickets - 1 // sub 1 to account for array indices starting from 0
             });
-            // gas optimization - overwrite existing values; otherwise append
-            if (ticketDistribution.length > i) {
+            // gas optimization - overwrite existing values instead of re-initializing; otherwise append
+            if (_ticketDistributionLength > i) {
                 ticketDistribution[i] = newDistribution;
             } else {
                 ticketDistribution.push(newDistribution);
             }
 
-            tickets[playerAddress] = 0; // reset player's tickets to 0 after they've been counted
-            ticketIndex = ticketIndex + (numTickets);
+            tickets[_playerAddress] = 0; // reset player's tickets to 0 after they've been counted
+            _ticketIndex = _ticketIndex + _numTickets;
         }
     }
 
@@ -341,17 +347,18 @@ contract Lottery is Ownable {
     function findWinningAddress(uint256 winningTicketIndex_) public {
         // console.log("findWinningAddress");
         // trivial case, no search required
-        if (numActivePlayers == 1) {
+        uint _numActivePlayers = numActivePlayers;
+        if (_numActivePlayers == 1) {
             winningTicket.addr = ticketDistribution[0].playerAddress;
         } else {
             // do binary search on ticketDistribution array to find winner
-            uint256 winningPlayerIndex = _binarySearch(
+            uint256 _winningPlayerIndex = _binarySearch(
                 0,
-                numActivePlayers - 1,
+                _numActivePlayers - 1,
                 winningTicketIndex_
             );
-            require(winningPlayerIndex < numActivePlayers); // sanity check
-            winningTicket.addr = ticketDistribution[winningPlayerIndex]
+            require(_winningPlayerIndex < _numActivePlayers); // sanity check
+            winningTicket.addr = ticketDistribution[_winningPlayerIndex]
                 .playerAddress;
         }
     }
@@ -369,32 +376,32 @@ contract Lottery is Ownable {
         uint256 rightIndex_,
         uint256 ticketIndexToFind_
     ) private returns (uint256) {
-        uint256 searchIndex = (rightIndex_ - leftIndex_) / (2) + (leftIndex_);
-
+        uint256 _searchIndex = (rightIndex_ - leftIndex_) / (2) + (leftIndex_);
+        uint _loopCount = loopCount;
         // counter
-        loopCount = loopCount + (1);
-        if (loopCount > maxLoops) {
+        loopCount = _loopCount + 1;
+        if (_loopCount + 1 > maxLoops) {
             // emergency stop in case infinite loop due to unforeseen bug
             return numActivePlayers;
         }
 
         if (
-            ticketDistribution[searchIndex].startIndex <= ticketIndexToFind_ &&
-            ticketDistribution[searchIndex].endIndex >= ticketIndexToFind_
+            ticketDistribution[_searchIndex].startIndex <= ticketIndexToFind_ &&
+            ticketDistribution[_searchIndex].endIndex >= ticketIndexToFind_
         ) {
-            return searchIndex;
+            return _searchIndex;
         } else if (
-            ticketDistribution[searchIndex].startIndex > ticketIndexToFind_
+            ticketDistribution[_searchIndex].startIndex > ticketIndexToFind_
         ) {
             // go to left subarray
-            rightIndex_ = searchIndex - (leftIndex_);
+            rightIndex_ = _searchIndex - (leftIndex_);
 
             return _binarySearch(leftIndex_, rightIndex_, ticketIndexToFind_);
         } else if (
-            ticketDistribution[searchIndex].endIndex < ticketIndexToFind_
+            ticketDistribution[_searchIndex].endIndex < ticketIndexToFind_
         ) {
             // go to right subarray
-            leftIndex_ = searchIndex + (leftIndex_) + 1;
+            leftIndex_ = _searchIndex + (leftIndex_) + 1;
             return _binarySearch(leftIndex_, rightIndex_, ticketIndexToFind_);
         }
 
@@ -432,13 +439,15 @@ contract Lottery is Ownable {
      */
     function withdraw(uint256 lotteryId_) external payable {
         // console.log("withdraw");
+        uint256 _pendingCurrentUserWithdrawal = pendingWithdrawals[lotteryId_][
+            msg.sender
+        ];
         require(
-            pendingWithdrawals[lotteryId_][msg.sender] > 0,
+            _pendingCurrentUserWithdrawal > 0,
             "require pending withdrawals to have funds for given user"
         );
-        uint256 withdrawalAmount = pendingWithdrawals[lotteryId_][msg.sender];
         pendingWithdrawals[lotteryId_][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
-        payable(msg.sender).transfer(withdrawalAmount); // must explicitly set payable address
-        emit WinnerFundsWithdrawn(msg.sender, withdrawalAmount);
+        payable(msg.sender).transfer(_pendingCurrentUserWithdrawal); // must explicitly set payable address
+        emit WinnerFundsWithdrawn(msg.sender, _pendingCurrentUserWithdrawal);
     }
 }
