@@ -307,8 +307,8 @@ contract Lottery is Ownable {
             address _playerAddress = listOfPlayers[i];
             uint256 _numTickets = tickets[_playerAddress];
 
-            TicketDistributionStruct calldata newDistribution = TicketDistributionStruct({
-                playerAddress: playerAddress,
+            TicketDistributionStruct memory newDistribution = TicketDistributionStruct({
+                playerAddress: _playerAddress,
                 startIndex: _ticketIndex,
                 endIndex: _ticketIndex + _numTickets - 1 // sub 1 to account for array indices starting from 0
             });
@@ -401,7 +401,7 @@ contract Lottery is Ownable {
             ticketDistribution[_searchIndex].endIndex < ticketIndexToFind_
         ) {
             // go to right subarray
-            leftIndex_ = searchIndex + (leftIndex_) + 1;
+            leftIndex_ = _searchIndex + (leftIndex_) + 1;
             return _binarySearch(leftIndex_, rightIndex_, ticketIndexToFind_);
         }
 
