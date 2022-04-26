@@ -301,25 +301,26 @@ contract Lottery is Ownable {
      */
     function _playerTicketDistribution() private {
         // console.log("_playerTicketDistribution");
-        uint256 ticketIndex = 0; // counter within loop
-        for (uint256 i = ticketIndex; i < numActivePlayers; i++) {
-            address playerAddress = listOfPlayers[i];
-            uint256 numTickets = tickets[playerAddress];
+        uint _ticketDistributionLength = ticketDistribution.length; // so state var doesn't need to be invoked each iteration of loop
+        uint256 _ticketIndex = 0; // counter within loop
+        for (uint256 i = _ticketIndex; i < numActivePlayers; i++) {
+            address _playerAddress = listOfPlayers[i];
+            uint256 _numTickets = tickets[_playerAddress];
 
-            TicketDistributionStruct memory newDistribution = TicketDistributionStruct({
+            TicketDistributionStruct calldata newDistribution = TicketDistributionStruct({
                 playerAddress: playerAddress,
-                startIndex: ticketIndex,
-                endIndex: ticketIndex + (numTickets) - (1) // sub 1 to account for array indices starting from 0
+                startIndex: _ticketIndex,
+                endIndex: _ticketIndex + _numTickets - 1 // sub 1 to account for array indices starting from 0
             });
-            // gas optimization - overwrite existing values; otherwise append
-            if (ticketDistribution.length > i) {
+            // gas optimization - overwrite existing values instead of re-initializing; otherwise append
+            if (_ticketDistributionLength > i) {
                 ticketDistribution[i] = newDistribution;
             } else {
                 ticketDistribution.push(newDistribution);
             }
 
-            tickets[playerAddress] = 0; // reset player's tickets to 0 after they've been counted
-            ticketIndex = ticketIndex + (numTickets);
+            tickets[_playerAddress] = 0; // reset player's tickets to 0 after they've been counted
+            _ticketIndex = _ticketIndex + _numTickets;
         }
     }
 
@@ -346,17 +347,18 @@ contract Lottery is Ownable {
     function findWinningAddress(uint256 winningTicketIndex_) public {
         // console.log("findWinningAddress");
         // trivial case, no search required
-        if (numActivePlayers == 1) {
+        uint _numActivePlayers = numActivePlayers;
+        if (_numActivePlayers == 1) {
             winningTicket.addr = ticketDistribution[0].playerAddress;
         } else {
             // do binary search on ticketDistribution array to find winner
-            uint256 winningPlayerIndex = _binarySearch(
+            uint256 _winningPlayerIndex = _binarySearch(
                 0,
-                numActivePlayers - 1,
+                _numActivePlayers - 1,
                 winningTicketIndex_
             );
-            require(winningPlayerIndex < numActivePlayers); // sanity check
-            winningTicket.addr = ticketDistribution[winningPlayerIndex]
+            require(_winningPlayerIndex < _numActivePlayers); // sanity check
+            winningTicket.addr = ticketDistribution[_winningPlayerIndex]
                 .playerAddress;
         }
     }
