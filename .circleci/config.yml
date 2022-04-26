@@ -1,0 +1,29 @@
+version: 2.1
+orbs:
+  node: circleci/node@5.0.2
+commands:
+  build:
+    steps:
+      - checkout
+      - node/install:
+          install-yarn: false
+          node-version: "16.14.2"
+      - run: node --version
+  test:
+    steps:
+      - run: npm i
+      - run: npx hardhat test
+executors:
+  docker-executor:
+    docker:
+      - image: "cimg/base:stable"
+jobs:
+  install-node-and-test:
+    executor: docker-executor
+    steps:
+      - build
+      - test
+workflows:
+  test-app:
+    jobs:
+      - install-node-and-test
