@@ -82,9 +82,9 @@ contract Lottery is Ownable {
 
     // modifiers
     /* @dev check that new lottery is a valid implementation
-  previous lottery must be inactive for new lottery to be saved
-  for when new lottery will be saved
-   */
+    previous lottery must be inactive for new lottery to be saved
+    for when new lottery will be saved
+    */
     modifier isNewLotteryValid() {
         // active lottery
         LotteryStruct memory lottery = lotteries[currentLotteryId];
@@ -94,9 +94,10 @@ contract Lottery is Ownable {
         );
         _;
     }
+
     /* @dev check that minting period is still open
-  for when user tries to mint more tickets
-   */
+    for when user tries to mint more tickets
+    */
     modifier isLotteryMintingOpen() {
         require(
             lotteries[currentLotteryId].isActive == true &&
@@ -107,10 +108,10 @@ contract Lottery is Ownable {
         _;
     }
     /* @dev check that minting period is completed, and lottery drawing can begin
-  either:
-  1) minting period manually ended, ie lottery is inactive. Then drawing can begin immediately.
-  2) lottery minting period has ended organically, and lottery is still active at that point
-   */
+    either:
+    1) minting period manually ended, ie lottery is inactive. Then drawing can begin immediately.
+    2) lottery minting period has ended organically, and lottery is still active at that point
+    */
     modifier isLotteryMintingCompleted() {
         require(
             (lotteries[currentLotteryId].isActive == true &&
@@ -142,6 +143,8 @@ contract Lottery is Ownable {
         maxPlayersAllowed = maxPlayersAllowed_;
         emit MaxPlayersAllowedUpdated(maxPlayersAllowed);
     }
+
+    // functions
 
     /*
      * @title setLotteryInactive
@@ -199,23 +202,27 @@ contract Lottery is Ownable {
      * @dev a function for players to mint lottery tix
      */
     function mintLotteryTickets() external payable isNewPlayerValid {
-        uint256 numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
-        require(numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
+        uint256 _numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
+        require(_numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
         // if player is "new" for current lottery, update the player lists
+
+        // memory var to conserve gas
+        uint _numActivePlayers = numActivePlayers;
+
         if (players[msg.sender] == false) {
-            require(numActivePlayers + (1) <= maxPlayersAllowed); // capped max # of players
-            if (listOfPlayers.length > numActivePlayers) {
-                listOfPlayers[numActivePlayers] = msg.sender; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
+            require(_numActivePlayers + 1 <= maxPlayersAllowed); // capped max # of players
+            if (listOfPlayers.length > _numActivePlayers) {
+                listOfPlayers[_numActivePlayers] = msg.sender; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
             } else {
                 listOfPlayers.push(msg.sender); // otherwise append to array
             }
             players[msg.sender] = true;
-            numActivePlayers = numActivePlayers + (1);
+            numActivePlayers = _numActivePlayers + 1;
         }
-        tickets[msg.sender] = tickets[msg.sender] + (numTicketsToMint); // account for if user has already minted tix previously for this current lottery
+        tickets[msg.sender] = tickets[msg.sender] + _numTicketsToMint; // account for if user has already minted tix previously for this current lottery
         prizeAmount = prizeAmount + (msg.value); // update the pot size
-        numTotalTickets = numTotalTickets + (numTicketsToMint); // update the total # of tickets minted
-        emit TicketsMinted(msg.sender, numTicketsToMint);
+        numTotalTickets = numTotalTickets + _numTicketsToMint; // update the total # of tickets minted
+        emit TicketsMinted(msg.sender, _numTicketsToMint);
     }
 
     /*
