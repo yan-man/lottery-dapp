@@ -59,7 +59,7 @@ contract Lottery is Ownable {
 
     // max # loops allowed for binary search; to prevent some bugs causing infinite loops in binary search
     uint256 public maxLoops = 10;
-    uint256 loopCount = 0; // for binary search
+    uint256 private loopCount = 0; // for binary search
 
     uint256 public currentLotteryId = 0;
     uint256 public numLotteries = 0;
@@ -129,8 +129,6 @@ contract Lottery is Ownable {
         );
         _;
     }
-
-    constructor() {}
 
     /*
      * @title setMaxPlayersAllowed
