@@ -64,7 +64,7 @@ contract Lottery is Ownable {
     event LogNewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
     event LogTicketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
     // emit when lottery drawing happens; winner found
-    event WinnerFound(
+    event LogWinnerFound(
         uint256 lotteryId,
         uint256 winningTicketIndex,
         address winningAddress
@@ -248,7 +248,7 @@ contract Lottery is Ownable {
         winningTicket.winningTicketIndex = winningTicketIndex;
         findWinningAddress(winningTicketIndex); // via binary search
 
-        emit WinnerFound(
+        emit LogWinnerFound(
             currentLotteryId,
             winningTicket.winningTicketIndex,
             winningTicket.addr
