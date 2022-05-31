@@ -188,11 +188,11 @@ If you encounter the following error make sure you're on npm v16: `nvm use 16`
 ## What’s Included?
 
 - [Frontend/Dapp](./frontend): A [Create React App](https://github.com/facebook/create-react-app) Dapp which interacts with the `Lottery.sol` smart contract.
-- [Hardhat](https://hardhat.org/): An Ethereum development task runner and testing network.
-- [Mocha](https://mochajs.org/): A JavaScript test runner.
-- [Chai](https://www.chaijs.com/): A JavaScript assertion library.
-- [ethers.js](https://docs.ethers.io/v5/): A JavaScript library for interacting with Ethereum.
-- [Waffle](https://github.com/EthWorks/Waffle/): To have Ethereum-specific Chai assertions/mathers.
+- [Hardhat](https://hardhat.org/): Ethereum development task runner and testing network.
+- [Mocha](https://mochajs.org/): JavaScript test runner.
+- [Chai](https://www.chaijs.com/): JavaScript assertion library.
+- [ethers.js](https://docs.ethers.io/v5/): JavaScript library for interacting with Ethereum.
+- [Waffle](https://github.com/EthWorks/Waffle/): Ethereum-specific Chai assertions/matchers.
 
 ## License
 
