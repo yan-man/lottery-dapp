@@ -61,8 +61,8 @@ contract Lottery is Ownable {
     // withdrawal design pattern
 
     // Events
-    event NewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
-    event TicketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
+    event LogNewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
+    event LogTicketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
     // emit when lottery drawing happens; winner found
     event WinnerFound(
         uint256 lotteryId,
@@ -76,9 +76,12 @@ contract Lottery is Ownable {
         uint256 amountDeposited
     );
     // emit when funds withdrawn by winner
-    event WinnerFundsWithdrawn(address winnerAddress, uint256 withdrawalAmount);
+    event LogWinnerFundsWithdrawn(
+        address winnerAddress,
+        uint256 withdrawalAmount
+    );
     // emit when owner has changed max player param
-    event MaxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
+    event LogMaxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
 
     // modifiers
     /* @dev check that new lottery is a valid implementation
@@ -141,7 +144,7 @@ contract Lottery is Ownable {
         onlyOwner
     {
         maxPlayersAllowed = maxPlayersAllowed_;
-        emit MaxPlayersAllowedUpdated(maxPlayersAllowed);
+        emit LogMaxPlayersAllowedUpdated(maxPlayersAllowed);
     }
 
     // functions
@@ -194,7 +197,7 @@ contract Lottery is Ownable {
             isCreated: true
         });
         numLotteries = numLotteries + 1;
-        emit NewLottery(msg.sender, startTime_, endTime);
+        emit LogNewLottery(msg.sender, startTime_, endTime);
     }
 
     /*
@@ -222,7 +225,7 @@ contract Lottery is Ownable {
         tickets[msg.sender] = tickets[msg.sender] + _numTicketsToMint; // account for if user has already minted tix previously for this current lottery
         prizeAmount = prizeAmount + (msg.value); // update the pot size
         numTotalTickets = numTotalTickets + _numTicketsToMint; // update the total # of tickets minted
-        emit TicketsMinted(msg.sender, _numTicketsToMint);
+        emit LogTicketsMinted(msg.sender, _numTicketsToMint);
     }
 
     /*
@@ -448,6 +451,6 @@ contract Lottery is Ownable {
         );
         pendingWithdrawals[lotteryId_][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
         payable(msg.sender).transfer(_pendingCurrentUserWithdrawal); // must explicitly set payable address
-        emit WinnerFundsWithdrawn(msg.sender, _pendingCurrentUserWithdrawal);
+        emit LogWinnerFundsWithdrawn(msg.sender, _pendingCurrentUserWithdrawal);
     }
 }
