@@ -12,26 +12,6 @@ import "hardhat/console.sol";
 contract Lottery is Ownable {
     using Math for uint256;
 
-    // Events
-    event NewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
-    event TicketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
-    // emit when lottery drawing happens; winner found
-    event WinnerFound(
-        uint256 lotteryId,
-        uint256 winningTicketIndex,
-        address winningAddress
-    );
-    // emit when lottery winnings deposited in pending withdrawals
-    event LotteryWinningsDeposited(
-        uint256 lotteryId,
-        address winningAddress,
-        uint256 amountDeposited
-    );
-    // emit when funds withdrawn by winner
-    event WinnerFundsWithdrawn(address winnerAddress, uint256 withdrawalAmount);
-    // emit when owner has changed max player param
-    event MaxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
-
     // State Variables
     struct LotteryStruct {
         uint256 lotteryId;
@@ -79,6 +59,26 @@ contract Lottery is Ownable {
     mapping(uint256 => LotteryStruct) public lotteries; // key is lotteryId
     mapping(uint256 => mapping(address => uint256)) public pendingWithdrawals; // pending withdrawals for each winner, key is lotteryId, then player address
     // withdrawal design pattern
+
+    // Events
+    event NewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
+    event TicketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
+    // emit when lottery drawing happens; winner found
+    event WinnerFound(
+        uint256 lotteryId,
+        uint256 winningTicketIndex,
+        address winningAddress
+    );
+    // emit when lottery winnings deposited in pending withdrawals
+    event LotteryWinningsDeposited(
+        uint256 lotteryId,
+        address winningAddress,
+        uint256 amountDeposited
+    );
+    // emit when funds withdrawn by winner
+    event WinnerFundsWithdrawn(address winnerAddress, uint256 withdrawalAmount);
+    // emit when owner has changed max player param
+    event MaxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
 
     // modifiers
     /* @dev check that new lottery is a valid implementation
