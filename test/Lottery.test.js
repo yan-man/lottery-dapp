@@ -18,6 +18,11 @@ describe("Lottery contract", function () {
     await LotteryContract.deployed();
   });
 
+  it("*Happy Path: Should init lottery with default numHours = 0", async function () {
+    await expect(LotteryContract.initLottery(unixtimeNow, 0)).to.not.be
+      .reverted;
+  });
+
   // You can nest describe calls to create subsections.
   describe("1)...Deployment", function () {
     // assume all variables related to uint256 are BigNumbers
@@ -110,6 +115,10 @@ describe("Lottery contract", function () {
           ...(await LotteryContract.lotteries(currentLotteryId.toNumber())),
         };
         expect(lottery.isActive).to.be.false;
+      });
+
+      it("*Happy Path: should cancel lottery", async function () {
+        await expect(LotteryContract.cancelLottery()).to.not.be.reverted;
       });
 
       describe("...After first lottery set inactive before any player has minted", function () {
@@ -224,6 +233,32 @@ describe("Lottery contract", function () {
           expect(await LotteryContract.tickets(player2.address)).to.be.equal(
             expectedNumTicketsMinted
           );
+        });
+        it("*Happy Path: Find winning address with only 1 player", async function () {
+          await LotteryContract.connect(owner).setLotteryInactive();
+          await LotteryContract.triggerLotteryDrawing();
+          const winningTicket = await LotteryContract.winningTicket();
+
+          let ticketDistribution = await Promise.all(
+            players.map(async (player, ind) => {
+              return await LotteryContract.getTicketDistribution(ind);
+            })
+          );
+          // confirm the winner
+          const expectedWinner = ticketDistribution.filter((distribution) => {
+            return (
+              distribution.startIndex.lte(winningTicket.winningTicketIndex) &&
+              distribution.endIndex.gte(winningTicket.winningTicketIndex)
+            );
+          })[0];
+
+          expect(expectedWinner.playerAddress).to.be.equal(winningTicket.addr);
+          expect(
+            expectedWinner.startIndex.lte(winningTicket.winningTicketIndex)
+          ).to.be.equal(true);
+          expect(
+            expectedWinner.endIndex.gte(winningTicket.winningTicketIndex)
+          ).to.be.equal(true);
         });
         describe("...After player2 mints tickets", function () {
           beforeEach(async function () {
