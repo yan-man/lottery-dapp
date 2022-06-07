@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/Lottery.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> Lottery.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">87.5% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>77/88</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">58.33% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>21/36</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">88.89% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>16/18</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">82.47% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>80/97</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">22×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">//SPDX-License-Identifier: UNLICENSED
+&nbsp;
+pragma solidity ^0.8.0;
+&nbsp;
+// load other contracts
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Random.sol";
+// for debugging
+import "hardhat/console.sol";
+&nbsp;
+contract Lottery is Ownable {
+    using Math for uint256;
+&nbsp;
+    // State Variables
+    struct LotteryStruct {
+        uint256 lotteryId;
+        uint256 startTime;
+        uint256 endTime;
+        bool isActive; // minting tickets is allowed. TASK: rename to "isMintingPeriodActive"?
+        bool isCompleted; // winner was found; winnings were deposited.
+        bool isCreated; // is created
+    }
+    struct TicketDistributionStruct {
+        address playerAddress;
+        uint256 startIndex; // inclusive
+        uint256 endIndex; // inclusive
+    }
+    struct WinningTicketStruct {
+        uint256 currentLotteryId;
+        uint256 winningTicketIndex;
+        address addr; // TASK: rename to "winningAddress"?
+    }
+    /* TASK: rename to TICKET_PRICE? More human readable, makes more sense. Although it technically is the minimum increment.
+     */
+    uint256 public constant MIN_DRAWING_INCREMENT = 100000000000000; // 0.0001 ETH; min eth amount to enter lottery.
+    uint256 public constant NUMBER_OF_HOURS = 168; // 1 week by default; configurable
+    uint256 public maxPlayersAllowed = 1000;
+&nbsp;
+    // max # loops allowed for binary search; to prevent some bugs causing infinite loops in binary search
+    uint256 public maxLoops = 10;
+    uint256 private loopCount = 0; // for binary search
+&nbsp;
+    uint256 public currentLotteryId = 0;
+    uint256 public numLotteries = 0;
+    uint256 public prizeAmount; // winnings. Probably duplicate and can be removed. Just use numTotalTickets/ (MIN_DRAWING_INCREMENT) to calculate prize amount
+&nbsp;
+    WinningTicketStruct public winningTicket;
+    TicketDistributionStruct[] public ticketDistribution;
+    address[] public listOfPlayers; // won't be deleted; sucessive lotteries overwrite indices. Don't rely on this for current participants list
+&nbsp;
+    uint256 public numActivePlayers;
+    uint256 public numTotalTickets;
+&nbsp;
+    mapping(uint256 =&gt; uint256) public prizes; // key is lotteryId
+    mapping(uint256 =&gt; WinningTicketStruct) public winningTickets; // key is lotteryId
+    mapping(address =&gt; bool) public players; // key is player address
+    mapping(address =&gt; uint256) public tickets; // key is player address
+    mapping(uint256 =&gt; LotteryStruct) public lotteries; // key is lotteryId
+    mapping(uint256 =&gt; mapping(address =&gt; uint256)) public pendingWithdrawals; // pending withdrawals for each winner, key is lotteryId, then player address
+    // withdrawal design pattern
+&nbsp;
+    // Events
+    event LogNewLottery(address creator, uint256 startTime, uint256 endTime); // emit when lottery created
+    event LogTicketsMinted(address player, uint256 numTicketsMinted); // emit when user purchases tix
+    // emit when lottery drawing happens; winner found
+    event LogWinnerFound(
+        uint256 lotteryId,
+        uint256 winningTicketIndex,
+        address winningAddress
+    );
+    // emit when lottery winnings deposited in pending withdrawals
+    event LotteryWinningsDeposited(
+        uint256 lotteryId,
+        address winningAddress,
+        uint256 amountDeposited
+    );
+    // emit when funds withdrawn by winner
+    event LogWinnerFundsWithdrawn(
+        address winnerAddress,
+        uint256 withdrawalAmount
+    );
+    // emit when owner has changed max player param
+    event LogMaxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
+&nbsp;
+    // Errors
+    error Lottery__ActiveLotteryExists();
+    error Lottery__MintingPeriodClosed();
+    error Lottery__MintingNotCompleted();
+    error Lottery__InadequateFunds();
+    error Lottery__InvalidWinningIndex();
+    error Lottery__InvalidWithdrawalAmount();
+    error Lottery__WithdrawalFailed();
+&nbsp;
+    // modifiers
+    /* @dev check that new lottery is a valid implementation
+    previous lottery must be inactive for new lottery to be saved
+    for when new lottery will be saved
+    */
+    modifier isNewLotteryValid() {
+        // active lottery
+        LotteryStruct memory lottery = lotteries[currentLotteryId];
+        if (lottery.isActive == true) {
+            revert Lottery__ActiveLotteryExists();
+        }
+        _;
+    }
+&nbsp;
+    /* @dev check that minting period is still open
+    for when user tries to mint more tickets
+    */
+<span class="fstat-no" title="function not covered" >    modifier isLotteryMintingOpen() {</span>
+<span class="cstat-no" title="statement not covered" >        if (</span>
+            !(lotteries[currentLotteryId].isActive == true &amp;&amp;
+                lotteries[currentLotteryId].endTime &gt; block.timestamp &amp;&amp;
+                lotteries[currentLotteryId].startTime &lt;= block.timestamp)
+        ) {
+            revert Lottery__MintingPeriodClosed();
+        }
+        _;
+    }
+    /* @dev check that minting period is completed, and lottery drawing can begin
+    either:
+    1) minting period manually ended, ie lottery is inactive. Then drawing can begin immediately.
+    2) lottery minting period has ended organically, and lottery is still active at that point
+    */
+    modifier isLotteryMintingCompleted() {
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (
+            !((lotteries[currentLotteryId].isActive == true &amp;&amp;
+                lotteries[currentLotteryId].endTime &lt; block.timestamp) ||
+                lotteries[currentLotteryId].isActive == false)
+        ) {
+            revert Lottery__MintingNotCompleted();
+        }
+        _;
+    }
+    /* check that new player has enough eth to buy at least 1 ticket
+     */
+    modifier isNewPlayerValid() {
+        if (msg.value.min(MIN_DRAWING_INCREMENT) &lt; MIN_DRAWING_INCREMENT) {
+            revert Lottery__InadequateFunds();
+        }
+        _;
+    }
+&nbsp;
+    /*
+     * @title setMaxPlayersAllowed
+     * @dev A function for owner to update max players allowed criteria
+     * @param uint256 _maxPlayersAllowed new max players value to set
+     */
+    function setMaxPlayersAllowed(uint256 maxPlayersAllowed_)
+        external
+        onlyOwner
+    {
+        maxPlayersAllowed = maxPlayersAllowed_;
+        emit LogMaxPlayersAllowedUpdated(maxPlayersAllowed);
+    }
+&nbsp;
+    // functions
+&nbsp;
+    /*
+     * @title setLotteryInactive
+     * @dev A function for owner to force update lottery status isActive to false
+     * public because it needs to be called internally when a Lottery is cancelled
+     * TASK: probably should rename this to something like "closeMintingPeriod".
+     */
+    function setLotteryInactive() public onlyOwner {
+        lotteries[currentLotteryId].isActive = false;
+    }
+&nbsp;
+    /*
+     * @title cancelLottery
+     * @dev A function for owner to force update lottery to be cancelled
+     * funds should be returned to players too
+     */
+<span class="fstat-no" title="function not covered" >    function cancelLottery() external onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        setLotteryInactive()</span>;
+<span class="cstat-no" title="statement not covered" >        _resetLottery()</span>;
+        // TASK: implement refund funds to users
+    }
+&nbsp;
+    /*
+     * @title initLottery
+     * @dev A function to initialize a lottery
+     * probably should also be onlyOwner
+     * @param uint256 startTime_: start of minting period, unixtime
+     * @param uint256 numHours: in hours, how long mint period will last
+     */
+    function initLottery(uint256 startTime_, uint256 numHours_)
+        external
+        isNewLotteryValid
+    // TASK: add onlyOwner and re-test
+    {
+        // basically default value
+        // if set to 0, default to explicit default number of days
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (numHours_ == 0) {
+<span class="cstat-no" title="statement not covered" >            numHours_ = NUMBER_OF_HOURS</span>;
+        }
+        uint256 endTime = startTime_ + (numHours_ * 1 hours);
+        lotteries[currentLotteryId] = LotteryStruct({
+            lotteryId: currentLotteryId,
+            startTime: startTime_,
+            endTime: endTime,
+            isActive: true,
+            isCompleted: false,
+            isCreated: true
+        });
+        numLotteries = numLotteries + 1;
+        emit LogNewLottery(msg.sender, startTime_, endTime);
+    }
+&nbsp;
+    /*
+     * @title mintLotteryTickets
+     * @dev a function for players to mint lottery tix
+     */
+    function mintLotteryTickets() external payable isNewPlayerValid {
+        uint256 _numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_numTicketsToMint &gt;= 1); // double check that user put in at least enough for 1 ticket
+        // if player is "new" for current lottery, update the player lists
+&nbsp;
+        // memory var to conserve gas
+        uint _numActivePlayers = numActivePlayers;
+&nbsp;
+        if (players[msg.sender] == false) {
+            <span class="missing-if-branch" title="else path not taken" >E</span>require(_numActivePlayers + 1 &lt;= maxPlayersAllowed); // capped max # of players
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (listOfPlayers.length &gt; _numActivePlayers) {
+<span class="cstat-no" title="statement not covered" >                listOfPlayers[_numActivePlayers] = msg.sender</span>; // set based on index for when lottery is reset - overwrite array instead of delete to save gas
+            } else {
+                listOfPlayers.push(msg.sender); // otherwise append to array
+            }
+            players[msg.sender] = true;
+            numActivePlayers = _numActivePlayers + 1;
+        }
+        tickets[msg.sender] = tickets[msg.sender] + _numTicketsToMint; // account for if user has already minted tix previously for this current lottery
+        prizeAmount = prizeAmount + (msg.value); // update the pot size
+        numTotalTickets = numTotalTickets + _numTicketsToMint; // update the total # of tickets minted
+        emit LogTicketsMinted(msg.sender, _numTicketsToMint);
+    }
+&nbsp;
+    /*
+     * @title triggerLotteryDrawing
+     * @dev a function for owner to trigger lottery drawing
+     */
+    function triggerLotteryDrawing()
+        external
+        isLotteryMintingCompleted
+        onlyOwner
+    {
+        // console.log("triggerLotteryDrawing");
+        prizes[currentLotteryId] = prizeAmount; // keep track of prize amts for each of the previous lotteries
+&nbsp;
+        _playerTicketDistribution(); // create the distribution to get ticket indexes for each user
+        // can't be done a priori bc of potential multiple mints per user
+        uint256 winningTicketIndex = _performRandomizedDrawing();
+        // initialize what we can first
+        winningTicket.currentLotteryId = currentLotteryId;
+        winningTicket.winningTicketIndex = winningTicketIndex;
+        findWinningAddress(winningTicketIndex); // via binary search
+&nbsp;
+        emit LogWinnerFound(
+            currentLotteryId,
+            winningTicket.winningTicketIndex,
+            winningTicket.addr
+        );
+    }
+&nbsp;
+    /*
+     * @title triggerDepositWinnings // TASK: rename to maybe depositWinnings
+     * @dev function to deposit winnings for user withdrawal pattern
+     * then reset lottery params for new one to be created
+     */
+    function triggerDepositWinnings() public {
+        // console.log("triggerDepositWinnings");
+        pendingWithdrawals[currentLotteryId][winningTicket.addr] = prizeAmount;
+        prizeAmount = 0;
+        lotteries[currentLotteryId].isCompleted = true;
+        winningTickets[currentLotteryId] = winningTicket;
+        // emit before resetting lottery so vars still valid
+        emit LotteryWinningsDeposited(
+            currentLotteryId,
+            winningTicket.addr,
+            pendingWithdrawals[currentLotteryId][winningTicket.addr]
+        );
+        _resetLottery();
+    }
+&nbsp;
+    /*
+     * @title getTicketDistribution
+     * @dev getter function for ticketDistribution bc its a struct
+     */
+    function getTicketDistribution(uint256 playerIndex_)
+        public
+        view
+        returns (
+            address playerAddress,
+            uint256 startIndex, // inclusive
+            uint256 endIndex // inclusive
+        )
+    {
+        return (
+            ticketDistribution[playerIndex_].playerAddress,
+            ticketDistribution[playerIndex_].startIndex,
+            ticketDistribution[playerIndex_].endIndex
+        );
+    }
+&nbsp;
+    /*
+     * @title _playerTicketDistribution
+     * @dev function to handle creating the ticket distribution
+     * if 1) player1 buys 10 tix, then 2) player2 buys 5 tix, and then 3) player1 buys 5 more
+     * player1's ticket indices will be 0-14; player2's from 15-19
+     * this is why ticketDistribution cannot be determined until minting period is closed
+     */
+    function _playerTicketDistribution() private {
+        // console.log("_playerTicketDistribution");
+        uint _ticketDistributionLength = ticketDistribution.length; // so state var doesn't need to be invoked each iteration of loop
+        uint256 _ticketIndex = 0; // counter within loop
+        for (uint256 i = _ticketIndex; i &lt; numActivePlayers; i++) {
+            address _playerAddress = listOfPlayers[i];
+            uint256 _numTickets = tickets[_playerAddress];
+&nbsp;
+            TicketDistributionStruct memory newDistribution = TicketDistributionStruct({
+                playerAddress: _playerAddress,
+                startIndex: _ticketIndex,
+                endIndex: _ticketIndex + _numTickets - 1 // sub 1 to account for array indices starting from 0
+            });
+            // gas optimization - overwrite existing values instead of re-initializing; otherwise append
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (_ticketDistributionLength &gt; i) {
+<span class="cstat-no" title="statement not covered" >                ticketDistribution[i] = newDistribution</span>;
+            } else {
+                ticketDistribution.push(newDistribution);
+            }
+&nbsp;
+            tickets[_playerAddress] = 0; // reset player's tickets to 0 after they've been counted
+            _ticketIndex = _ticketIndex + _numTickets;
+        }
+    }
+&nbsp;
+    /*
+     * @title _performRandomizedDrawing
+     * @dev function to generate random winning ticket index. Still need to find corresponding user afterwards.
+     * v0.1 isn't randomized (for testing)
+     */
+    function _performRandomizedDrawing() private view returns (uint256) {
+        // console.log("_performRandomizedDrawing");
+        /* TASK: implement random drawing from 0 to numTotalTickets-1
+    use chainlink https://docs.chain.link/docs/get-a-random-number/ to get random values
+     */
+        return Random.naiveRandInt(0, numTotalTickets - 1);
+    }
+&nbsp;
+    /*
+     * @title findWinningAddress
+     * @dev function to find winning player address corresponding to winning ticket index
+     * calls binary search
+     * @param uint256 winningTicketIndex_: ticket index selected as winner.
+     * Search for this within the ticket distribution to find corresponding Player
+     */
+    function findWinningAddress(uint256 winningTicketIndex_) public {
+        // console.log("findWinningAddress");
+        // trivial case, no search required
+        uint _numActivePlayers = numActivePlayers;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (_numActivePlayers == 1) {
+<span class="cstat-no" title="statement not covered" >            winningTicket.addr = ticketDistribution[0].playerAddress</span>;
+        } else {
+            // do binary search on ticketDistribution array to find winner
+            uint256 _winningPlayerIndex = _binarySearch(
+                0,
+                _numActivePlayers - 1,
+                winningTicketIndex_
+            );
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (_winningPlayerIndex &gt;= _numActivePlayers) {
+                // sanity check
+                revert Lottery__InvalidWinningIndex();
+            }
+            winningTicket.addr = ticketDistribution[_winningPlayerIndex]
+                .playerAddress;
+        }
+    }
+&nbsp;
+    /*
+     * @title _binarySearch
+     * @dev function implementing binary search on ticket distribution var
+     * recursive function
+     * @param uint256 leftIndex_ initially 0
+     * @param uint256 rightIndex_ initially max ind, ie array.length - 1
+     * @param uint256 ticketIndexToFind_ to search for
+     */
+    function _binarySearch(
+        uint256 leftIndex_,
+        uint256 rightIndex_,
+        uint256 ticketIndexToFind_
+    ) private returns (uint256) {
+        uint256 _searchIndex = (rightIndex_ - leftIndex_) / (2) + (leftIndex_);
+        uint _loopCount = loopCount;
+        // counter
+        loopCount = _loopCount + 1;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (_loopCount + 1 &gt; maxLoops) {
+            // emergency stop in case infinite loop due to unforeseen bug
+<span class="cstat-no" title="statement not covered" >            return numActivePlayers;</span>
+        }
+&nbsp;
+        if (
+            ticketDistribution[_searchIndex].startIndex &lt;= ticketIndexToFind_ &amp;&amp;
+            ticketDistribution[_searchIndex].endIndex &gt;= ticketIndexToFind_
+        ) {
+            return _searchIndex;
+        } else <span class="missing-if-branch" title="if path not taken" >I</span>if (
+            ticketDistribution[_searchIndex].startIndex &gt; ticketIndexToFind_
+        ) {
+            // go to left subarray
+<span class="cstat-no" title="statement not covered" >            rightIndex_ = _searchIndex - (leftIndex_)</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            return _binarySearch(leftIndex_, rightIndex_, ticketIndexToFind_);</span>
+        } else <span class="missing-if-branch" title="else path not taken" >E</span>if (
+            ticketDistribution[_searchIndex].endIndex &lt; ticketIndexToFind_
+        ) {
+            // go to right subarray
+            leftIndex_ = _searchIndex + (leftIndex_) + 1;
+            return _binarySearch(leftIndex_, rightIndex_, ticketIndexToFind_);
+        }
+&nbsp;
+        // if nothing found (bug), return an impossible player index
+        // this index is outside expected bound, bc indexes run from 0 to numActivePlayers-1
+<span class="cstat-no" title="statement not covered" >        return numActivePlayers;</span>
+    }
+&nbsp;
+    /*
+     * @title _resetLottery
+     * @dev function to reset lottery by setting state vars to defaults
+     * don't delete if possible, as it requires lots of gas
+     */
+    function _resetLottery() private {
+        // console.log("_resetLottery");
+&nbsp;
+        numTotalTickets = 0;
+        numActivePlayers = 0;
+        lotteries[currentLotteryId].isActive = false;
+        lotteries[currentLotteryId].isCompleted = true;
+        winningTicket = WinningTicketStruct({
+            currentLotteryId: 0,
+            winningTicketIndex: 0,
+            addr: address(0)
+        });
+&nbsp;
+        currentLotteryId = currentLotteryId + (1); // increment id counter
+    }
+&nbsp;
+    /*
+     * @title withdraw
+     * @dev function to allow winner to withdraw prize
+     * implement withdrawal pattern
+     * @param uint256 lotteryId_ to minimize the search requirement
+     */
+    function withdraw(uint256 lotteryId_) external payable {
+        // console.log("withdraw");
+        uint256 _pendingCurrentUserWithdrawal = pendingWithdrawals[lotteryId_][
+            msg.sender
+        ];
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (_pendingCurrentUserWithdrawal == 0) {
+            revert Lottery__InvalidWithdrawalAmount();
+        }
+        pendingWithdrawals[lotteryId_][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
+        (bool sent, ) = msg.sender.call{value: _pendingCurrentUserWithdrawal}(
+            ""
+        );
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (sent == false) {
+            revert Lottery__WithdrawalFailed();
+        }
+        emit LogWinnerFundsWithdrawn(msg.sender, _pendingCurrentUserWithdrawal);
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Mon Jun 06 2022 21:45:09 GMT-0500 (Central Daylight Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
