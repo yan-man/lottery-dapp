@@ -14,6 +14,7 @@ commands:
     steps:
       - run: npm i
       - run: npx hardhat coverage
+      - codecov/upload
 executors:
   docker-executor:
     docker:
@@ -28,8 +29,3 @@ workflows:
   test-app:
     jobs:
       - install-node-and-test
-  upload-to-codecov:
-    jobs:
-      - node/test:
-          post-steps:
-            - codecov/upload
