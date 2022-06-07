@@ -88,9 +88,7 @@ describe("Lottery contract", function () {
       it("Should not allow an invalid lottery to be saved", async function () {
         await expect(
           LotteryContract.initLottery(unixtimeNow, 0)
-        ).to.be.revertedWith(
-          "current lottery must be inactive to save a new one"
-        );
+        ).to.be.revertedWith("Lottery__ActiveLotteryExists");
       });
       it("*Happy Path: Should set existing lottery to be inactive", async function () {
         await LotteryContract.setLotteryInactive();
@@ -122,9 +120,7 @@ describe("Lottery contract", function () {
               "wei"
             ), // Sends less than min allowed; min amount - 100000
           })
-        ).to.be.revertedWith(
-          "msg value must be greater than min amount allowed"
-        );
+        ).to.be.revertedWith("Lottery__InadequateFunds");
       });
 
       it("*Happy Path: Should mint lottery tickets for new player1", async function () {
