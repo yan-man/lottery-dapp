@@ -83,6 +83,14 @@ contract Lottery is Ownable {
     // emit when owner has changed max player param
     event LogMaxPlayersAllowedUpdated(uint256 maxPlayersAllowed);
 
+    // Errors
+    error Lottery__ActiveLotteryExists();
+    error Lottery__MintingPeriodClosed();
+    error Lottery__MintingNotCompleted();
+    error Lottery__InadequateFunds();
+    error Lottery__InvalidWinningIndex();
+    error Lottery__InvalidWithdrawalAmount();
+
     // modifiers
     /* @dev check that new lottery is a valid implementation
     previous lottery must be inactive for new lottery to be saved
@@ -91,10 +99,9 @@ contract Lottery is Ownable {
     modifier isNewLotteryValid() {
         // active lottery
         LotteryStruct memory lottery = lotteries[currentLotteryId];
-        require(
-            lottery.isActive == false,
-            "Lottery: current lottery must be inactive to save a new one"
-        );
+        if (lottery.isActive == true) {
+            revert Lottery__ActiveLotteryExists();
+        }
         _;
     }
 
@@ -102,12 +109,13 @@ contract Lottery is Ownable {
     for when user tries to mint more tickets
     */
     modifier isLotteryMintingOpen() {
-        require(
-            lotteries[currentLotteryId].isActive == true &&
+        if (
+            !(lotteries[currentLotteryId].isActive == true &&
                 lotteries[currentLotteryId].endTime > block.timestamp &&
-                lotteries[currentLotteryId].startTime <= block.timestamp,
-            "Lottery: current lottery must be active; current time must be within lottery time frame"
-        );
+                lotteries[currentLotteryId].startTime <= block.timestamp)
+        ) {
+            revert Lottery__MintingPeriodClosed();
+        }
         _;
     }
     /* @dev check that minting period is completed, and lottery drawing can begin
@@ -116,21 +124,21 @@ contract Lottery is Ownable {
     2) lottery minting period has ended organically, and lottery is still active at that point
     */
     modifier isLotteryMintingCompleted() {
-        require(
-            (lotteries[currentLotteryId].isActive == true &&
+        if (
+            !((lotteries[currentLotteryId].isActive == true &&
                 lotteries[currentLotteryId].endTime < block.timestamp) ||
-                lotteries[currentLotteryId].isActive == false,
-            "Lottery: current lottery must be active or minting period must be closed"
-        );
+                lotteries[currentLotteryId].isActive == false)
+        ) {
+            revert Lottery__MintingNotCompleted();
+        }
         _;
     }
     /* check that new player has enough eth to buy at least 1 ticket
      */
     modifier isNewPlayerValid() {
-        require(
-            msg.value.min(MIN_DRAWING_INCREMENT) >= MIN_DRAWING_INCREMENT,
-            "Lottery: msg value must be greater than min amount allowed"
-        );
+        if (msg.value.min(MIN_DRAWING_INCREMENT) < MIN_DRAWING_INCREMENT) {
+            revert Lottery__InadequateFunds();
+        }
         _;
     }
 
@@ -360,7 +368,10 @@ contract Lottery is Ownable {
                 _numActivePlayers - 1,
                 winningTicketIndex_
             );
-            require(_winningPlayerIndex < _numActivePlayers); // sanity check
+            if (_winningPlayerIndex >= _numActivePlayers) {
+                // sanity check
+                revert Lottery__InvalidWinningIndex();
+            }
             winningTicket.addr = ticketDistribution[_winningPlayerIndex]
                 .playerAddress;
         }
@@ -445,10 +456,9 @@ contract Lottery is Ownable {
         uint256 _pendingCurrentUserWithdrawal = pendingWithdrawals[lotteryId_][
             msg.sender
         ];
-        require(
-            _pendingCurrentUserWithdrawal > 0,
-            "require pending withdrawals to have funds for given user"
-        );
+        if (_pendingCurrentUserWithdrawal == 0) {
+            revert Lottery__InvalidWithdrawalAmount();
+        }
         pendingWithdrawals[lotteryId_][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
         payable(msg.sender).transfer(_pendingCurrentUserWithdrawal); // must explicitly set payable address
         emit LogWinnerFundsWithdrawn(msg.sender, _pendingCurrentUserWithdrawal);
