@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   node: circleci/node@5.0.2
+  codecov: codecov/codecov@3.2.3
 commands:
   build:
     steps:
@@ -12,7 +13,7 @@ commands:
   test:
     steps:
       - run: npm i
-      - run: npx hardhat test
+      - run: npx hardhat coverage
 executors:
   docker-executor:
     docker:
@@ -27,3 +28,8 @@ workflows:
   test-app:
     jobs:
       - install-node-and-test
+  upload-to-codecov:
+    jobs:
+      - node/test:
+          post-steps:
+            - codecov/upload
