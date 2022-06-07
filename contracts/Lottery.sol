@@ -90,6 +90,7 @@ contract Lottery is Ownable {
     error Lottery__InadequateFunds();
     error Lottery__InvalidWinningIndex();
     error Lottery__InvalidWithdrawalAmount();
+    error Lottery__WithdrawalFailed();
 
     // modifiers
     /* @dev check that new lottery is a valid implementation
@@ -460,7 +461,12 @@ contract Lottery is Ownable {
             revert Lottery__InvalidWithdrawalAmount();
         }
         pendingWithdrawals[lotteryId_][msg.sender] = 0; // zero out pendingWithdrawals before transfer, to prevent attacks
-        payable(msg.sender).transfer(_pendingCurrentUserWithdrawal); // must explicitly set payable address
+        (bool sent, ) = msg.sender.call{value: _pendingCurrentUserWithdrawal}(
+            ""
+        );
+        if (sent == false) {
+            revert Lottery__WithdrawalFailed();
+        }
         emit LogWinnerFundsWithdrawn(msg.sender, _pendingCurrentUserWithdrawal);
     }
 }
