@@ -18,6 +18,11 @@ describe("Lottery contract", function () {
     await LotteryContract.deployed();
   });
 
+  it("*Happy Path: Should init lottery with default numHours = 0", async function () {
+    await expect(LotteryContract.initLottery(unixtimeNow, 0)).to.not.be
+      .reverted;
+  });
+
   // You can nest describe calls to create subsections.
   describe("1)...Deployment", function () {
     // assume all variables related to uint256 are BigNumbers
@@ -70,6 +75,20 @@ describe("Lottery contract", function () {
       expect(lottery.isActive).to.be.true;
     });
 
+    it("Should not allow withdrawals with no funds to withdraw", async function () {
+      await expect(LotteryContract.withdraw(1)).to.be.revertedWith(
+        "Lottery__InvalidWithdrawalAmount"
+      );
+    });
+
+    it("Should not allow minting tickets from non-existent lottery", async function () {
+      await expect(
+        LotteryContract.mintLotteryTickets({
+          value: "1000",
+        })
+      ).to.be.revertedWith("Lottery__InadequateFunds");
+    });
+
     /* TASK: test init new lottery without being owner
      */
     it("Should not allow new lottery to be initialized by non owner", async function () {});
@@ -96,6 +115,10 @@ describe("Lottery contract", function () {
           ...(await LotteryContract.lotteries(currentLotteryId.toNumber())),
         };
         expect(lottery.isActive).to.be.false;
+      });
+
+      it("*Happy Path: should cancel lottery", async function () {
+        await expect(LotteryContract.cancelLottery()).to.not.be.reverted;
       });
 
       describe("...After first lottery set inactive before any player has minted", function () {
@@ -211,6 +234,32 @@ describe("Lottery contract", function () {
             expectedNumTicketsMinted
           );
         });
+        it("*Happy Path: Find winning address with only 1 player", async function () {
+          await LotteryContract.connect(owner).setLotteryInactive();
+          await LotteryContract.triggerLotteryDrawing();
+          const winningTicket = await LotteryContract.winningTicket();
+
+          let ticketDistribution = await Promise.all(
+            players.map(async (player, ind) => {
+              return await LotteryContract.getTicketDistribution(ind);
+            })
+          );
+          // confirm the winner
+          const expectedWinner = ticketDistribution.filter((distribution) => {
+            return (
+              distribution.startIndex.lte(winningTicket.winningTicketIndex) &&
+              distribution.endIndex.gte(winningTicket.winningTicketIndex)
+            );
+          })[0];
+
+          expect(expectedWinner.playerAddress).to.be.equal(winningTicket.addr);
+          expect(
+            expectedWinner.startIndex.lte(winningTicket.winningTicketIndex)
+          ).to.be.equal(true);
+          expect(
+            expectedWinner.endIndex.gte(winningTicket.winningTicketIndex)
+          ).to.be.equal(true);
+        });
         describe("...After player2 mints tickets", function () {
           beforeEach(async function () {
             const mintValue = ethers.utils.parseEther("0.5");
@@ -290,6 +339,11 @@ describe("Lottery contract", function () {
               players[0].numTickets = await LotteryContract.tickets(
                 players[0].addr.address
               );
+            });
+            it("should not allow lottery drawing to be triggered while minting is open", async function () {
+              await expect(
+                LotteryContract.triggerLotteryDrawing()
+              ).to.be.revertedWith("Lottery__MintingNotCompleted");
             });
             it("*Happy Path: Should trigger lottery drawing", async function () {
               await LotteryContract.connect(owner).setLotteryInactive();
