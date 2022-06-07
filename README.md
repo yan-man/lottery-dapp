@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/yan-man/lottery-dapp/branch/master/graph/badge.svg?token=R2WMF5LJWA)](https://codecov.io/gh/yan-man/lottery-dapp)
+
 # DEGENtralized Lottery v0.1
 
 A decentralized lottery Dapp. For degenerates.
