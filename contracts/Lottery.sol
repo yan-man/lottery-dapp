@@ -106,19 +106,6 @@ contract Lottery is Ownable {
         _;
     }
 
-    /* @dev check that minting period is still open
-    for when user tries to mint more tickets
-    */
-    modifier isLotteryMintingOpen() {
-        if (
-            !(lotteries[currentLotteryId].isActive == true &&
-                lotteries[currentLotteryId].endTime > block.timestamp &&
-                lotteries[currentLotteryId].startTime <= block.timestamp)
-        ) {
-            revert Lottery__MintingPeriodClosed();
-        }
-        _;
-    }
     /* @dev check that minting period is completed, and lottery drawing can begin
     either:
     1) minting period manually ended, ie lottery is inactive. Then drawing can begin immediately.

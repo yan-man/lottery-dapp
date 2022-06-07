@@ -70,6 +70,20 @@ describe("Lottery contract", function () {
       expect(lottery.isActive).to.be.true;
     });
 
+    it("Should not allow withdrawals with no funds to withdraw", async function () {
+      await expect(LotteryContract.withdraw(1)).to.be.revertedWith(
+        "Lottery__InvalidWithdrawalAmount"
+      );
+    });
+
+    it("Should not allow minting tickets from non-existent lottery", async function () {
+      await expect(
+        LotteryContract.mintLotteryTickets({
+          value: "1000",
+        })
+      ).to.be.revertedWith("Lottery__InadequateFunds");
+    });
+
     /* TASK: test init new lottery without being owner
      */
     it("Should not allow new lottery to be initialized by non owner", async function () {});
@@ -290,6 +304,11 @@ describe("Lottery contract", function () {
               players[0].numTickets = await LotteryContract.tickets(
                 players[0].addr.address
               );
+            });
+            it("should not allow lottery drawing to be triggered while minting is open", async function () {
+              await expect(
+                LotteryContract.triggerLotteryDrawing()
+              ).to.be.revertedWith("Lottery__MintingNotCompleted");
             });
             it("*Happy Path: Should trigger lottery drawing", async function () {
               await LotteryContract.connect(owner).setLotteryInactive();
