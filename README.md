@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/yan-man/lottery-dapp/branch/master/graph/badge.svg?token=R2WMF5LJWA)](https://codecov.io/gh/yan-man/lottery-dapp)
+[![codecov](https://codecov.io/gh/yan-man/lottery-dapp/branch/master/graph/badge.svg?token=R2WMF5LJWA)](https://codecov.io/gh/yan-man/lottery-dapp) [![CircleCI](https://circleci.com/gh/yan-man/lottery-dapp/tree/master.svg?style=shield)](https://circleci.com/gh/yan-man/lottery-dapp/tree/master)
 
 # DEGENtralized Lottery v0.1
 
