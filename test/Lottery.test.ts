@@ -1,21 +1,30 @@
-const { expect } = require("chai");
-const { BigNumber } = require("ethers");
-const { ethers, waffle } = require("hardhat");
+import { expect } from "chai";
+import { BigNumber, ContractFactory } from "ethers";
+import { ethers, waffle } from "hardhat";
+import { Lottery } from "../typechain-types";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Sign } from "crypto";
+import { MockProvider } from "ethereum-waffle";
 
 describe("Lottery contract", function () {
-  let Lottery;
-  let LotteryContract;
-  let addrs;
-  const unixtimeNow = Math.floor(Date.now() / 1000);
-  const hoursInSeconds = 3600;
-  const expectedMinAmountInWei = BigNumber.from("100000000000000");
+  let Lottery: ContractFactory;
+  let LotteryContract: Lottery;
+  let addrs: SignerWithAddress[];
+  const unixtimeNow: number = Math.floor(Date.now() / 1000);
+  const hoursInSeconds: number = 3600;
+  const expectedMinAmountInWei: BigNumber = BigNumber.from("100000000000000");
 
   beforeEach(async function () {
     Lottery = await ethers.getContractFactory("Lottery");
     [...addrs] = await ethers.getSigners();
 
-    LotteryContract = await Lottery.deploy();
+    LotteryContract = (await Lottery.deploy()) as Lottery;
     await LotteryContract.deployed();
+  });
+
+  it("*Happy Path: Should init lottery with default numHours = 0", async function () {
+    await expect(LotteryContract.initLottery(unixtimeNow, 0)).to.not.be
+      .reverted;
   });
 
   // You can nest describe calls to create subsections.
@@ -38,9 +47,10 @@ describe("Lottery contract", function () {
       const tx = await LotteryContract.setMaxPlayersAllowed(3);
       const receipt = await tx.wait();
 
-      const { maxPlayersAllowed } = { ...receipt.events[0].args };
-      expect(maxPlayersAllowed).to.equal(3);
-
+      const event = {
+        ...receipt.events![0].args,
+      };
+      expect(event.maxPlayersAllowed).to.equal(3);
       expect(await LotteryContract.maxPlayersAllowed()).to.equal(3);
     });
 
@@ -51,12 +61,14 @@ describe("Lottery contract", function () {
 
       const expectedStartTime = unixtimeNow;
       const expectedEndTime = unixtimeNow + numHours * hoursInSeconds;
-      const { creator, startTime, endTime } = receipt.events[0].args;
+      const event = {
+        ...receipt.events![0].args,
+      };
 
-      expect(receipt.events.length).to.equal(1); // 1 event emitted
-      expect(creator).to.equal(addrs[0].address);
-      expect(startTime).to.equal(expectedStartTime);
-      expect(endTime).to.equal(expectedEndTime);
+      expect(receipt.events!.length).to.equal(1); // 1 event emitted
+      expect(event.creator).to.equal(addrs[0].address);
+      expect(event.startTime).to.equal(expectedStartTime);
+      expect(event.endTime).to.equal(expectedEndTime);
 
       const currentLotteryId = await LotteryContract.currentLotteryId();
       expect(currentLotteryId).to.equal(0);
@@ -70,6 +82,20 @@ describe("Lottery contract", function () {
       expect(lottery.isActive).to.be.true;
     });
 
+    it("Should not allow withdrawals with no funds to withdraw", async function () {
+      await expect(LotteryContract.withdraw(1)).to.be.revertedWith(
+        "Lottery__InvalidWithdrawalAmount"
+      );
+    });
+
+    it("Should not allow minting tickets from non-existent lottery", async function () {
+      await expect(
+        LotteryContract.mintLotteryTickets({
+          value: "1000",
+        })
+      ).to.be.revertedWith("Lottery__InadequateFunds");
+    });
+
     /* TASK: test init new lottery without being owner
      */
     it("Should not allow new lottery to be initialized by non owner", async function () {});
@@ -78,13 +104,12 @@ describe("Lottery contract", function () {
       /* TASK: refactor - maybe put currentLotteryId into lottery object
     for later tests when multiple lottos will be added (maybe concurrently)
      */
-      let currentLotteryId, owner;
+      let currentLotteryId: BigNumber, owner: SignerWithAddress;
       beforeEach(async function () {
         const tx = await LotteryContract.initLottery(unixtimeNow, 1);
         currentLotteryId = await LotteryContract.currentLotteryId();
         owner = addrs[0];
       });
-      owner;
       it("Should not allow an invalid lottery to be saved", async function () {
         await expect(
           LotteryContract.initLottery(unixtimeNow, 0)
@@ -96,6 +121,10 @@ describe("Lottery contract", function () {
           ...(await LotteryContract.lotteries(currentLotteryId.toNumber())),
         };
         expect(lottery.isActive).to.be.false;
+      });
+
+      it("*Happy Path: should cancel lottery", async function () {
+        await expect(LotteryContract.cancelLottery()).to.not.be.reverted;
       });
 
       describe("...After first lottery set inactive before any player has minted", function () {
@@ -132,16 +161,18 @@ describe("Lottery contract", function () {
         const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
 
         // check emitted event details
-        const { player, numTicketsMinted } = { ...receipt.events[0].args };
-        expect(player).to.be.equal(addrs[0].address);
-        expect(numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
+        const event = {
+          ...receipt.events![0].args,
+        };
+        expect(event.player).to.be.equal(addrs[0].address);
+        expect(event.numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
 
         expect(await LotteryContract.listOfPlayers(0)).to.be.equal(
           addrs[0].address
         );
         expect(await LotteryContract.numActivePlayers()).to.be.equal(1);
         expect(await LotteryContract.numTotalTickets()).to.be.equal(
-          numTicketsMinted
+          event.numTicketsMinted
         );
         expect(await LotteryContract.players(addrs[0].address)).to.be.equal(
           true
@@ -152,10 +183,10 @@ describe("Lottery contract", function () {
       });
 
       describe("...After player1 mints tickets", function () {
-        const players = [];
-        let expectedNumTotalTicketsMinted;
+        const players: any = [];
+        let expectedNumTotalTicketsMinted: BigNumber;
         beforeEach(async function () {
-          const player1 = addrs[0];
+          const player1: SignerWithAddress = addrs[0];
           const mintValue = ethers.utils.parseEther("1.0");
           const tx = await LotteryContract.mintLotteryTickets({
             value: mintValue, // Sends exactly 1.0 ether
@@ -192,9 +223,11 @@ describe("Lottery contract", function () {
           );
 
           // event logs tests
-          const { player, numTicketsMinted } = { ...receipt.events[0].args };
-          expect(player).to.be.equal(player2.address);
-          expect(numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
+          const event = {
+            ...receipt.events![0].args,
+          };
+          expect(event.player).to.be.equal(player2.address);
+          expect(event.numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
           /* TASK: add tests here to check the total # of tickets for given address - tickets getter
            */
           expect(await LotteryContract.listOfPlayers(1)).to.be.equal(
@@ -211,7 +244,34 @@ describe("Lottery contract", function () {
             expectedNumTicketsMinted
           );
         });
+        it("*Happy Path: Find winning address with only 1 player", async function () {
+          await LotteryContract.connect(owner).setLotteryInactive();
+          await LotteryContract.triggerLotteryDrawing();
+          const winningTicket = await LotteryContract.winningTicket();
+
+          let ticketDistribution = await Promise.all(
+            players.map(async (player: SignerWithAddress, ind: number) => {
+              return await LotteryContract.getTicketDistribution(ind);
+            })
+          );
+          // confirm the winner
+          const expectedWinner = ticketDistribution.filter((distribution) => {
+            return (
+              distribution.startIndex.lte(winningTicket.winningTicketIndex) &&
+              distribution.endIndex.gte(winningTicket.winningTicketIndex)
+            );
+          })[0];
+
+          expect(expectedWinner.playerAddress).to.be.equal(winningTicket.addr);
+          expect(
+            expectedWinner.startIndex.lte(winningTicket.winningTicketIndex)
+          ).to.be.equal(true);
+          expect(
+            expectedWinner.endIndex.gte(winningTicket.winningTicketIndex)
+          ).to.be.equal(true);
+        });
         describe("...After player2 mints tickets", function () {
+          let expectedNumTicketsPlayer2: BigNumber;
           beforeEach(async function () {
             const mintValue = ethers.utils.parseEther("0.5");
             const player2 = addrs[1];
@@ -238,17 +298,20 @@ describe("Lottery contract", function () {
             const receipt = await tx.wait();
 
             const expectedNumTicketsMinted = value.div(expectedMinAmountInWei);
-            expectedNumTicketsPlayer1 = players[0].expectedNumTickets.add(
-              expectedNumTicketsMinted
-            );
+            const expectedNumTicketsPlayer1: BigNumber =
+              players[0].expectedNumTickets.add(expectedNumTicketsMinted);
             expectedNumTotalTicketsMinted = expectedNumTotalTicketsMinted.add(
               expectedNumTicketsMinted
             );
 
             // check emitted event - player addr added / num lotto tickets granted
-            const { player, numTicketsMinted } = { ...receipt.events[0].args };
-            expect(player).to.be.equal(addrs[0].address);
-            expect(numTicketsMinted).to.be.equal(expectedNumTicketsMinted);
+            const event = {
+              ...receipt.events![0].args,
+            };
+            expect(event.player).to.be.equal(addrs[0].address);
+            expect(event.numTicketsMinted).to.be.equal(
+              expectedNumTicketsMinted
+            );
 
             expect(await LotteryContract.listOfPlayers(0)).to.be.equal(
               addrs[0].address
@@ -291,6 +354,11 @@ describe("Lottery contract", function () {
                 players[0].addr.address
               );
             });
+            it("should not allow lottery drawing to be triggered while minting is open", async function () {
+              await expect(
+                LotteryContract.triggerLotteryDrawing()
+              ).to.be.revertedWith("Lottery__MintingNotCompleted");
+            });
             it("*Happy Path: Should trigger lottery drawing", async function () {
               await LotteryContract.connect(owner).setLotteryInactive();
               const lottery = {
@@ -301,7 +369,7 @@ describe("Lottery contract", function () {
               const winningTicket = await LotteryContract.winningTicket();
 
               let ticketDistribution = await Promise.all(
-                players.map(async (player, ind) => {
+                players.map(async (player: SignerWithAddress, ind: number) => {
                   return await LotteryContract.getTicketDistribution(ind);
                 })
               );
@@ -346,7 +414,7 @@ describe("Lottery contract", function () {
                 );
               });
               describe("...After winning address found", function () {
-                let winningTicketFull;
+                let winningTicketFull: any;
                 beforeEach(async function () {
                   const winningTicket = await LotteryContract.winningTicket();
                   const winningTicketIndex = winningTicket.winningTicketIndex;
@@ -373,8 +441,10 @@ describe("Lottery contract", function () {
                   ).to.be.equal(expectedWinnings);
                 });
                 describe("...After deposit winnings", function () {
-                  let expectedWinnings, currentLotteryId, provider;
-                  const winnerBalance = {};
+                  let expectedWinnings: BigNumber,
+                    currentLotteryId: BigNumber,
+                    provider: MockProvider;
+                  const winnerBalance: any = {};
 
                   beforeEach(async function () {
                     provider = waffle.provider;
@@ -406,17 +476,19 @@ describe("Lottery contract", function () {
                     ).withdraw(currentLotteryId.toNumber());
                     const receipt = await tx.wait();
 
-                    const { winnerAddress, withdrawalAmount } = {
-                      ...receipt.events[0].args,
+                    const event = {
+                      ...receipt.events![0].args,
                     };
 
-                    expect(winnerAddress).to.be.equal(
+                    expect(event.winnerAddress).to.be.equal(
                       expectedWinningAddr.address
                     );
-                    expect(pendingWithdrawal).to.be.equal(withdrawalAmount);
+                    expect(pendingWithdrawal).to.be.equal(
+                      event.withdrawalAmount
+                    );
 
                     winnerBalance.final = await provider.getBalance(
-                      winnerAddress
+                      event.winnerAddress
                     );
 
                     const winningsWithdrawnSuccessfully =
