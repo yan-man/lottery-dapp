@@ -9,3 +9,8 @@ declare module "mocha" {
     lottery: Lottery;
   }
 }
+
+export interface Signers {
+  deployer: Wallet;
+  player1: Wallet;
+}

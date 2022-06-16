@@ -202,6 +202,13 @@ contract Lottery is Ownable {
      */
     function mintLotteryTickets() external payable isNewPlayerValid {
         uint256 _numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
+        console.log(
+            "lottoId: _numTicketsToMint: msg.sender: players[msg.sender] :: ",
+            currentLotteryId,
+            _numTicketsToMint,
+            msg.sender
+        );
+        console.log(players[msg.sender]);
         require(_numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
         // if player is "new" for current lottery, update the player lists
 
@@ -235,13 +242,27 @@ contract Lottery is Ownable {
     {
         // console.log("triggerLotteryDrawing");
         prizes[currentLotteryId] = prizeAmount; // keep track of prize amts for each of the previous lotteries
-
+        console.log(
+            "1. lotto id: num active ::",
+            currentLotteryId,
+            numActivePlayers
+        );
         _playerTicketDistribution(); // create the distribution to get ticket indexes for each user
         // can't be done a priori bc of potential multiple mints per user
         uint256 winningTicketIndex = _performRandomizedDrawing();
+        console.log(
+            "2. lotto id: num active ::",
+            currentLotteryId,
+            numActivePlayers
+        );
         // initialize what we can first
         winningTicket.currentLotteryId = currentLotteryId;
         winningTicket.winningTicketIndex = winningTicketIndex;
+        console.log(
+            "3. lotto id: num active ::",
+            currentLotteryId,
+            numActivePlayers
+        );
         findWinningAddress(winningTicketIndex); // via binary search
 
         emit LogWinnerFound(
@@ -347,10 +368,16 @@ contract Lottery is Ownable {
         // console.log("findWinningAddress");
         // trivial case, no search required
         uint _numActivePlayers = numActivePlayers;
+        console.log(
+            "lottoId: numactiveplayers :: fwa",
+            currentLotteryId,
+            _numActivePlayers
+        );
         if (_numActivePlayers == 1) {
             winningTicket.addr = ticketDistribution[0].playerAddress;
         } else {
             // do binary search on ticketDistribution array to find winner
+            console.log(_numActivePlayers - 1);
             uint256 _winningPlayerIndex = _binarySearch(
                 0,
                 _numActivePlayers - 1,
@@ -378,6 +405,9 @@ contract Lottery is Ownable {
         uint256 rightIndex_,
         uint256 ticketIndexToFind_
     ) private returns (uint256) {
+        if (leftIndex_ == rightIndex_) {
+            return rightIndex_;
+        }
         uint256 _searchIndex = (rightIndex_ - leftIndex_) / (2) + (leftIndex_);
         uint _loopCount = loopCount;
         // counter

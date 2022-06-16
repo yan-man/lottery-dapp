@@ -3,6 +3,7 @@ import { Wallet } from "ethers";
 import { unitLotteryFixture } from "../shared/fixtures";
 import { Lottery } from "../../typechain-types";
 import LotterySpec from "./Lottery/Lottery.spec";
+import { Signers } from "../shared/types";
 
 describe("Unit tests", async () => {
   before(async function () {
