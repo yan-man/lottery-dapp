@@ -34,16 +34,10 @@ const config: HardhatUserConfig = {
       chainId: 31337,
       allowUnlimitedContractSize: true,
     },
-    goerli: {
-      url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-      accounts: [
-        `${
-          process.env.GOERLI_PRIVATE_KEY
-            ? process.env.GOERLI_PRIVATE_KEY
-            : "remote"
-        }`,
-      ],
-    },
+    // goerli: {
+    //   url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+    //   accounts: [`${process.env.GOERLI_PRIVATE_KEY}`],
+    // },
   },
   paths: {
     sources: "./contracts",
