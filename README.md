@@ -13,6 +13,10 @@ This project is a front end demo of a decentralized lottery smart contract built
 
 Built with Solidity and React using [Hardhat](https://hardhat.org/) and [Hardhat hackathon boilerplate](https://github.com/NomicFoundation/hardhat-hackathon-boilerplate).
 
+## Testnet
+
+Contracts are deployed onto Goerli testnet: [0x62cD86Aa0354F8048C883B808d58b1188f4650c4](https://goerli.etherscan.io/address/0x62cD86Aa0354F8048C883B808d58b1188f4650c4#code)
+
 ## Quick Start
 
 Clone this repository and install its dependencies:
