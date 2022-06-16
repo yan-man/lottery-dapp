@@ -40,7 +40,7 @@ const config: HardhatUserConfig = {
         `${
           process.env.GOERLI_PRIVATE_KEY
             ? process.env.GOERLI_PRIVATE_KEY
-            : "0x0000000000000000000000000000000000000000"
+            : "remote"
         }`,
       ],
     },
