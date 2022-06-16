@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { task, HardhatUserConfig } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-gas-reporter";
@@ -6,7 +7,9 @@ import "hardhat-contract-sizer";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "hardhat-watcher";
+import "@nomiclabs/hardhat-etherscan";
 
+require("dotenv").config();
 // The next line is part of the sample project, you don't need it in your
 // project. It imports a Hardhat task definition, that can be used for
 // testing the frontend.
@@ -23,14 +26,17 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  etherscan: {
+    apiKey: { goerli: `${process.env.ETHERSCAN_API_KEY}` },
+  },
   networks: {
     hardhat: {
       chainId: 31337,
       allowUnlimitedContractSize: true,
     },
-    // rinkeby: {
-    // url: "https://eth-rinkeby.alchemyapi.io/v2/123abc123abc123abc123abc123abcde",
-    // accounts: [privateKey1, privateKey2, ...]
+    // goerli: {
+    //   url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+    //   accounts: [`${process.env.GOERLI_PRIVATE_KEY}`],
     // },
   },
   paths: {
