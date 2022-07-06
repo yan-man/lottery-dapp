@@ -203,12 +203,12 @@ contract Lottery is Ownable {
     function mintLotteryTickets() external payable isNewPlayerValid {
         uint256 _numTicketsToMint = msg.value / (MIN_DRAWING_INCREMENT);
         console.log(
-            "lottoId: _numTicketsToMint: msg.sender: players[msg.sender] :: ",
+            "lottoId: _numTicketsToMint: msg.sender :: ",
             currentLotteryId,
             _numTicketsToMint,
             msg.sender
         );
-        console.log(players[msg.sender]);
+        console.log("players[msg.sender] : ", players[msg.sender]);
         require(_numTicketsToMint >= 1); // double check that user put in at least enough for 1 ticket
         // if player is "new" for current lottery, update the player lists
 
@@ -340,6 +340,7 @@ contract Lottery is Ownable {
             }
 
             tickets[_playerAddress] = 0; // reset player's tickets to 0 after they've been counted
+            players[_playerAddress] = false; // reset player mapping
             _ticketIndex = _ticketIndex + _numTickets;
         }
     }

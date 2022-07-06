@@ -534,30 +534,64 @@ const shouldManageLottery = (): void => {
                       });
                       describe(`...After 2nd lottery initiated`, function () {
                         beforeEach(async function () {
+                          console.log("... new lottery #2 ...");
+
                           const initLotteryTx =
                             await LotteryContract.initLottery(unixtimeNow, 1);
                           await initLotteryTx.wait();
                           this.currentLotteryId =
                             await LotteryContract.currentLotteryId();
 
-                          //   console.log(this.currentLotteryId);
-
+                          console.log(
+                            "... before: is active?: ",
+                            await LotteryContract.players(
+                              this.users.deployer.address
+                            )
+                          );
+                          console.log(
+                            "... before: is active?: ",
+                            await LotteryContract.players(
+                              this.signers[1].address
+                            )
+                          );
+                          console.log(
+                            "... before: num active players: ",
+                            await LotteryContract.numActivePlayers()
+                          );
                           const mintLotteryTicketsTx =
-                            await LotteryContract.mintLotteryTickets({
+                            await LotteryContract.connect(
+                              this.users.deployer
+                            ).mintLotteryTickets({
                               value: expectedMinAmountInWei.mul(5),
                             });
                           await mintLotteryTicketsTx.wait();
-                          console.log(await LotteryContract.numActivePlayers());
 
-                          const setLotteryInactiveTx =
-                            await LotteryContract.connect(
-                              owner
-                            ).setLotteryInactive();
-                          await setLotteryInactiveTx.wait();
+                          console.log(
+                            "... after: is active?: ",
+                            await LotteryContract.players(
+                              this.users.deployer.address
+                            )
+                          );
+                          console.log(
+                            "... after: is active?: ",
+                            await LotteryContract.players(
+                              this.signers[1].address
+                            )
+                          );
+                          console.log(
+                            "...after; num active players: ",
+                            await LotteryContract.numActivePlayers()
+                          );
 
-                          const triggerLotteryDrawingTx =
-                            await LotteryContract.triggerLotteryDrawing();
-                          await triggerLotteryDrawingTx.wait();
+                          // const setLotteryInactiveTx =
+                          //   await LotteryContract.connect(
+                          //     owner
+                          //   ).setLotteryInactive();
+                          // await setLotteryInactiveTx.wait();
+
+                          // const triggerLotteryDrawingTx =
+                          //   await LotteryContract.triggerLotteryDrawing();
+                          // await triggerLotteryDrawingTx.wait();
 
                           //   console.log(await LotteryContract.numActivePlayers());
 
@@ -566,7 +600,7 @@ const shouldManageLottery = (): void => {
                           //   await triggerDepositWinningsTx.wait();
                         });
                         it.only(`*Happy Path: Should init next lottery`, async function () {
-                          console.log(this.currentLotteryId);
+                          // console.log(this.currentLotteryId);
                         });
                       });
                     });

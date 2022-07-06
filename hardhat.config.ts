@@ -61,7 +61,7 @@ const config: HardhatUserConfig = {
           },
         },
       ],
-      files: ["./test/**/*"],
+      files: ["./test/**/*", "./contracts/**/*"],
       verbose: true,
     },
   },
